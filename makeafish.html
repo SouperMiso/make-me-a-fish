@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Device Fish</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0f2027;
+            background: linear-gradient(to bottom, #203a43, #0f2027);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="fishCanvas"></canvas>
+
+    <script>
+        // --- 1. Local Storage for Device ID (Fixes local file issues) ---
+        let deviceId = localStorage.getItem("fish_device_id");
+        if (!deviceId) {
+            deviceId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem("fish_device_id", deviceId);
+        }
+
+        // --- 2. Time Logic (11:11 PST/PDT Rollover) ---
+        function getFishDayString() {
+            let now = new Date();
+            
+            // Format time to Pacific Time strictly
+            let ptFormatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Los_Angeles',
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', hour12: false
+            });
+            
+            let parts = ptFormatter.formatToParts(now);
+            let pt = {};
+            parts.forEach(p => {
+                if(p.type !== 'literal') pt[p.type] = parseInt(p.value);
+            });
+
+            // Check if we have passed 11:11 AM PT today
+            let isPast1111 = (pt.hour > 11) || (pt.hour === 11 && pt.minute >= 11);
+            
+            let fishDate = new Date(pt.year, pt.month - 1, pt.day);
+            if (!isPast1111) {
+                // If it's before 11:11 AM, we are still on "yesterday's" fish
+                fishDate.setDate(fishDate.getDate() - 1);
+            }
+            
+            return `${fishDate.getFullYear()}-${fishDate.getMonth() + 1}-${fishDate.getDate()}`;
+        }
+
+        // --- 3. Seeded Random Number Generator ---
+        function stringToSeed(str) {
+            let h = 0xdeadbeef;
+            for(let i = 0; i < str.length; i++) {
+                h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
+            }
+            return (h ^ h >>> 16) >>> 0;
+        }
+
+        function seededRandom(seed) {
+            return function() {
+                var t = seed += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        // --- 4. Canvas Drawing Logic ---
+        const canvas = document.getElementById('fishCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeAndDraw() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawFish();
+        }
+
+        function drawFish() {
+            // FIX: Reset the random seed exactly at the start of every draw.
+            // This prevents window resizing from messing up the sequence.
+            const dailySeedString = deviceId + "-" + getFishDayString();
+            const rand = seededRandom(stringToSeed(dailySeedString));
+
+            function randomRange(min, max) {
+                return min + rand() * (max - min);
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // Generate Fish Attributes based on seed
+            const bodyWidth = randomRange(100, 250);
+            const bodyHeight = randomRange(60, 150);
+            
+            const tailSize = randomRange(40, 100);
+            const tailAngle = randomRange(0.2, 0.8);
+            
+            const hueBase = randomRange(0, 360);
+            const bodyColor = `hsl(${hueBase}, 80%, 50%)`;
+            const finColor = `hsl(${(hueBase + randomRange(-40, 40)) % 360}, 90%, 60%)`;
+            const scaleColor = `hsla(${(hueBase + 20) % 360}, 70%, 40%, 0.4)`;
+
+            // 1. Draw Tail
+            ctx.fillStyle = finColor;
+            ctx.beginPath();
+            ctx.moveTo(cx - bodyWidth + 20, cy);
+            ctx.lineTo(cx - bodyWidth - tailSize, cy - (tailSize * tailAngle));
+            ctx.lineTo(cx - bodyWidth - tailSize, cy + (tailSize * tailAngle));
+            ctx.fill();
+
+            // 2. Draw Top Fin
+            ctx.beginPath();
+            ctx.moveTo(cx - 20, cy - bodyHeight + 10);
+            ctx.lineTo(cx + randomRange(10, 50), cy - bodyHeight - randomRange(30, 80));
+            ctx.lineTo(cx + 40, cy - bodyHeight + 10);
+            ctx.fill();
+
+            // 3. Draw Bottom Fin
+            ctx.beginPath();
+            ctx.moveTo(cx - 20, cy + bodyHeight - 10);
+            ctx.lineTo(cx + randomRange(10, 40), cy + bodyHeight + randomRange(20, 60));
+            ctx.lineTo(cx + 30, cy + bodyHeight - 10);
+            ctx.fill();
+
+            // 4. Draw Body and Scales
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, bodyWidth, bodyHeight, 0, 0, Math.PI * 2);
+            ctx.fillStyle = bodyColor;
+            ctx.fill();
+            ctx.clip(); // Mask scales inside body
+
+            // Draw Scales
+            ctx.strokeStyle = scaleColor;
+            ctx.lineWidth = randomRange(2, 4);
+            const scaleSize = randomRange(10, 25);
+            
+            for (let x = cx + bodyWidth; x > cx - bodyWidth; x -= scaleSize * 0.8) {
+                for (let y = cy - bodyHeight; y < cy + bodyHeight; y += scaleSize * 1.2) {
+                    let yOffset = (Math.floor(x / scaleSize) % 2 === 0) ? (scaleSize * 0.6) : 0;
+                    ctx.beginPath();
+                    ctx.arc(x, y + yOffset, scaleSize, -Math.PI / 2, Math.PI / 2);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+
+            // 5. Draw Eye
+            const eyeX = cx + bodyWidth * 0.6;
+            const eyeY = cy - bodyHeight * 0.2;
+            const eyeRadius = randomRange(8, 20);
+            
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "white";
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(eyeX + (eyeRadius * 0.2), eyeY, eyeRadius * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = "black";
+            ctx.fill();
+        }
+
+        // Listeners & Init
+        window.addEventListener('resize', resizeAndDraw);
+        resizeAndDraw();
+    </script>
+</body>
+</html>
