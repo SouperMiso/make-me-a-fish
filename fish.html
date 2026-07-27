@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Device Fish</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0f2027;
+            background: linear-gradient(to bottom, #203a43, #0f2027);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        
+        #title {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 24px;
+            text-shadow: 4px 4px 0px #333333; 
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+            transition: color 0.5s, text-shadow 0.5s;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            #title {
+                font-size: 16px;
+                top: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="title">11:11, make a fih!</div>
+
+    <canvas id="fishCanvas"></canvas>
+
+    <script>
+        // --- 1. Local Storage for Device ID ---
+        let deviceId = localStorage.getItem("fish_device_id");
+        if (!deviceId) {
+            deviceId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem("fish_device_id", deviceId);
+        }
+
+        // --- 2. Time Logic (11:11 PST/PDT Rollover) ---
+        function getFishDayString() {
+            let now = new Date();
+            let ptFormatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Los_Angeles',
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', hour12: false
+            });
+            
+            let parts = ptFormatter.formatToParts(now);
+            let pt = {};
+            parts.forEach(p => {
+                if(p.type !== 'literal') pt[p.type] = parseInt(p.value);
+            });
+
+            let isPast1111 = (pt.hour > 11) || (pt.hour === 11 && pt.minute >= 11);
+            let fishDate = new Date(pt.year, pt.month - 1, pt.day);
+            if (!isPast1111) {
+                fishDate.setDate(fishDate.getDate() - 1);
+            }
+            return `${fishDate.getFullYear()}-${fishDate.getMonth() + 1}-${fishDate.getDate()}`;
+        }
+
+        // --- 3. Seeded Random Number Generator ---
+        function stringToSeed(str) {
+            let h = 0xdeadbeef;
+            for(let i = 0; i < str.length; i++) {
+                h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
+            }
+            return (h ^ h >>> 16) >>> 0;
+        }
+
+        function seededRandom(seed) {
+            return function() {
+                var t = seed += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        // --- 4. Canvas Drawing Logic ---
+        const canvas = document.getElementById('fishCanvas');
+        const ctx = canvas.getContext('2d');
+        const titleEl = document.getElementById('title');
+
+        function resizeAndDraw() {
+            const ratio = window.devicePixelRatio || 1;
+            
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            
+            canvas.width = window.innerWidth * ratio;
+            canvas.height = window.innerHeight * ratio;
+            
+            drawFish(ratio);
+        }
+
+        function drawFish(pixelRatio) {
+            const dailySeedString = deviceId + "-" + getFishDayString();
+            const rand = seededRandom(stringToSeed(dailySeedString));
+
+            function randomRange(min, max) { return min + rand() * (max - min); }
+            function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
+
+            ctx.resetTransform();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Determine if Shiny (1 in 1,000,000,000)
+            const isShiny = rand() < 0.000000001; 
+            
+            if (isShiny) {
+                titleEl.innerText = "You caught a shiny fih!";
+                titleEl.style.color = "#FFD700";
+                titleEl.style.textShadow = "4px 4px 0px #B8860B, 0 0 20px #FFD700";
+            } else {
+                titleEl.innerText = "11:11, make a fih!";
+                titleEl.style.color = "#ffffff";
+                titleEl.style.textShadow = "4px 4px 0px #333333";
+            }
+
+            // Expanded Variations
+            const bodyType = pick(['ellipse', 'box', 'diamond', 'pill', 'hexagon', 'trapezoid', 'teardrop', 'triangle']);
+            const tailType = pick(['triangle', 'forked', 'paddle', 'heart', 'crescent', 'spiky']);
+            const finType = pick(['spiky', 'smooth', 'tiny', 'ribbon']);
+            const patternType = pick(['scales', 'stripes', 'spots', 'grid', 'x_cross', 'halftone', 'sparkles', 'waves', 'chevrons', 'none']);
+            const eyeType = pick(['round', 'slit', 'square', 'anime', 'sleepy', 'star', 'dot']);
+
+            // Dimensional Math
+            const bodyWidth = randomRange(100, 250);
+            const bodyHeight = randomRange(60, 160);
+            const tailSize = randomRange(60, 140);
+            const tailAngle = randomRange(0.3, 0.9);
+
+            // Calculate precise tight bounding box for THIS fish to maximize screen usage
+            const maxLeft = bodyWidth * 0.9 + tailSize * 1.25;
+            const maxRight = bodyWidth * 1.15;
+            const maxTop = bodyHeight + (finType === 'ribbon' ? 170 : 90);
+            const maxBottom = bodyHeight + (finType === 'ribbon' ? 170 : 90);
+
+            const neededWidth = Math.max(maxLeft, maxRight) * 2;
+            const neededHeight = Math.max(maxTop, maxBottom) * 2;
+
+            // Scale up to fill ~90% of whichever screen dimension touches the edge first
+            const scaleX = window.innerWidth / neededWidth;
+            const scaleY = window.innerHeight / neededHeight;
+            const baseScale = Math.min(scaleX, scaleY) * 0.90; 
+            
+            const finalScale = pixelRatio * baseScale;
+            // Center in physical canvas with a slight downward offset for title clearance
+            ctx.translate(canvas.width / 2, (canvas.height / 2) + (20 * pixelRatio * baseScale));
+            ctx.scale(finalScale, finalScale);
+            
+            const cx = 0;
+            const cy = 0;
+
+            // Color Math
+            const hueBase = isShiny ? 45 : randomRange(0, 360);
+            const saturation = isShiny ? '100%' : '80%';
+            
+            const bodyColor = `hsl(${hueBase}, ${saturation}, ${isShiny ? '55%' : '50%'})`;
+            const finColor = `hsl(${(hueBase + (isShiny ? 10 : pick([-40, 40, 180]))) % 360}, 90%, 60%)`; 
+            const scaleColor = `hsla(${(hueBase + 20) % 360}, ${isShiny ? '100%' : '80%'}, ${isShiny ? '70%' : '30%'}, 0.5)`;
+
+            if (isShiny) {
+                ctx.shadowBlur = 40;
+                ctx.shadowColor = "gold";
+            }
+
+            // Body Path Tracing
+            function traceBody() {
+                ctx.beginPath();
+                if (bodyType === 'ellipse') {
+                    ctx.ellipse(cx, cy, bodyWidth, bodyHeight, 0, 0, Math.PI * 2);
+                } else if (bodyType === 'box') {
+                    ctx.roundRect(cx - bodyWidth, cy - bodyHeight, bodyWidth * 2, bodyHeight * 2, 20);
+                } else if (bodyType === 'pill') {
+                    ctx.roundRect(cx - bodyWidth, cy - bodyHeight, bodyWidth * 2, bodyHeight * 2, bodyHeight);
+                } else if (bodyType === 'diamond') {
+                    ctx.moveTo(cx - bodyWidth, cy); ctx.lineTo(cx, cy - bodyHeight);
+                    ctx.lineTo(cx + bodyWidth, cy); ctx.lineTo(cx, cy + bodyHeight);
+                } else if (bodyType === 'hexagon') {
+                    for(let i=0; i<6; i++) {
+                        let angle = (Math.PI / 3) * i;
+                        let px = cx + bodyWidth * Math.cos(angle);
+                        let py = cy + bodyHeight * Math.sin(angle);
+                        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                    }
+                } else if (bodyType === 'trapezoid') {
+                    ctx.moveTo(cx - bodyWidth, cy + bodyHeight);
+                    ctx.lineTo(cx + bodyWidth, cy + bodyHeight);
+                    ctx.lineTo(cx + bodyWidth * 0.6, cy - bodyHeight);
+                    ctx.lineTo(cx - bodyWidth * 0.6, cy - bodyHeight);
+                } else if (bodyType === 'teardrop') {
+                    ctx.moveTo(cx - bodyWidth, cy);
+                    ctx.bezierCurveTo(cx - bodyWidth, cy - bodyHeight, cx + bodyWidth, cy - bodyHeight, cx + bodyWidth, cy);
+                    ctx.bezierCurveTo(cx + bodyWidth, cy + bodyHeight, cx - bodyWidth, cy + bodyHeight, cx - bodyWidth, cy);
+                } else if (bodyType === 'triangle') {
+                    ctx.moveTo(cx - bodyWidth, cy + bodyHeight);
+                    ctx.lineTo(cx + bodyWidth, cy);
+                    ctx.lineTo(cx - bodyWidth, cy - bodyHeight);
+                }
+                ctx.closePath();
+            }
+
+            // 1. Draw Tail
+            ctx.fillStyle = finColor;
+            ctx.beginPath();
+            const tailX = cx - bodyWidth + (bodyWidth * 0.1); 
+            
+            if (tailType === 'triangle') {
+                ctx.moveTo(tailX, cy);
+                ctx.lineTo(tailX - tailSize, cy - (tailSize * tailAngle));
+                ctx.lineTo(tailX - tailSize, cy + (tailSize * tailAngle));
+            } else if (tailType === 'forked') {
+                ctx.moveTo(tailX, cy);
+                ctx.lineTo(tailX - tailSize, cy - (tailSize * tailAngle));
+                ctx.lineTo(tailX - tailSize * 0.4, cy);
+                ctx.lineTo(tailX - tailSize, cy + (tailSize * tailAngle));
+            } else if (tailType === 'paddle') {
+                ctx.roundRect(tailX - tailSize, cy - (tailSize * tailAngle)/2, tailSize, tailSize * tailAngle, 10);
+            } else if (tailType === 'heart') {
+                ctx.moveTo(tailX, cy);
+                ctx.bezierCurveTo(tailX - tailSize/2, cy - tailSize, tailX - tailSize, cy - tailSize/2, tailX - tailSize, cy);
+                ctx.bezierCurveTo(tailX - tailSize, cy + tailSize/2, tailX - tailSize/2, cy + tailSize, tailX, cy);
+            } else if (tailType === 'crescent') {
+                ctx.arc(tailX - tailSize/2, cy, tailSize, -Math.PI/2, Math.PI/2, true);
+                ctx.arc(tailX - tailSize*0.2, cy, tailSize*0.8, Math.PI/2, -Math.PI/2, false);
+            } else if (tailType === 'spiky') {
+                ctx.moveTo(tailX, cy);
+                ctx.lineTo(tailX - tailSize, cy - tailSize*0.8);
+                ctx.lineTo(tailX - tailSize*0.6, cy - tailSize*0.2);
+                ctx.lineTo(tailX - tailSize*1.2, cy);
+                ctx.lineTo(tailX - tailSize*0.6, cy + tailSize*0.2);
+                ctx.lineTo(tailX - tailSize, cy + tailSize*0.8);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Fin Drawing Helper
+            function drawFin(isTop) {
+                const dir = isTop ? -1 : 1;
+                ctx.beginPath();
+                if (finType === 'smooth') {
+                    ctx.moveTo(cx - bodyWidth*0.3, cy + (bodyHeight*0.8)*dir);
+                    ctx.quadraticCurveTo(cx, cy + (bodyHeight*2)*dir, cx + bodyWidth*0.5, cy + (bodyHeight*0.8)*dir);
+                } else if (finType === 'spiky') {
+                    ctx.moveTo(cx - 30, cy + bodyHeight * dir);
+                    ctx.lineTo(cx, cy + (bodyHeight + randomRange(40, 80)) * dir);
+                    ctx.lineTo(cx + 20, cy + bodyHeight * dir);
+                    ctx.lineTo(cx + 40, cy + (bodyHeight + randomRange(30, 60)) * dir);
+                    ctx.lineTo(cx + 60, cy + bodyHeight * dir);
+                } else if (finType === 'tiny') {
+                    ctx.arc(cx, cy + bodyHeight * dir, 25, 0, Math.PI, isTop);
+                } else if (finType === 'ribbon') {
+                    ctx.moveTo(cx, cy + bodyHeight * dir);
+                    ctx.bezierCurveTo(cx - 60, cy + (bodyHeight+100)*dir, cx + 80, cy + (bodyHeight+120)*dir, cx - 40, cy + (bodyHeight+160)*dir);
+                    ctx.lineTo(cx - 10, cy + bodyHeight * dir);
+                }
+                ctx.fill();
+            }
+
+            // 2 & 3. Draw Fins
+            drawFin(true);  
+            drawFin(false); 
+
+            // 4. Draw Main Body
+            ctx.save();
+            traceBody();
+            ctx.fillStyle = bodyColor;
+            ctx.fill();
+            
+            // Mask textures inside body
+            ctx.clip(); 
+            ctx.shadowBlur = 0; 
+
+            // Draw Patterns
+            ctx.strokeStyle = scaleColor;
+            ctx.fillStyle = scaleColor;
+            const patternScale = randomRange(18, 32);
+
+            if (patternType === 'scales') {
+                ctx.lineWidth = randomRange(2, 5);
+                for (let x = cx + bodyWidth; x > cx - bodyWidth; x -= patternScale * 0.8) {
+                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 1.2) {
+                        let yOffset = (Math.floor(x / patternScale) % 2 === 0) ? (patternScale * 0.6) : 0;
+                        ctx.beginPath();
+                        ctx.arc(x, y + yOffset, patternScale, -Math.PI / 2, Math.PI / 2);
+                        ctx.stroke();
+                    }
+                }
+            } else if (patternType === 'stripes') {
+                ctx.lineWidth = randomRange(8, 20);
+                for (let x = cx - bodyWidth + 10; x < cx + bodyWidth; x += patternScale * 1.5) {
+                    ctx.beginPath(); ctx.moveTo(x, cy - bodyHeight); ctx.lineTo(x, cy + bodyHeight); ctx.stroke();
+                }
+            } else if (patternType === 'grid') {
+                ctx.lineWidth = randomRange(3, 6);
+                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale) {
+                    ctx.beginPath(); ctx.moveTo(x, cy - bodyHeight); ctx.lineTo(x, cy + bodyHeight); ctx.stroke();
+                }
+                for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
+                    ctx.beginPath(); ctx.moveTo(cx - bodyWidth, y); ctx.lineTo(cx + bodyWidth, y); ctx.stroke();
+                }
+            } else if (patternType === 'spots') {
+                const numSpots = Math.floor(randomRange(15, 40));
+                for(let i = 0; i < numSpots; i++) {
+                    ctx.beginPath();
+                    ctx.arc(cx + randomRange(-bodyWidth, bodyWidth), cy + randomRange(-bodyHeight, bodyHeight), randomRange(5, 25), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (patternType === 'x_cross') {
+                ctx.lineWidth = randomRange(2, 4);
+                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale) {
+                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
+                        ctx.beginPath();
+                        ctx.moveTo(x - patternScale*0.3, y - patternScale*0.3);
+                        ctx.lineTo(x + patternScale*0.3, y + patternScale*0.3);
+                        ctx.moveTo(x + patternScale*0.3, y - patternScale*0.3);
+                        ctx.lineTo(x - patternScale*0.3, y + patternScale*0.3);
+                        ctx.stroke();
+                    }
+                }
+            } else if (patternType === 'halftone') {
+                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale * 0.9) {
+                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 0.9) {
+                        let normX = (x - (cx - bodyWidth)) / (bodyWidth * 2); 
+                        let dotRadius = Math.max(1.5, (patternScale * 0.45) * Math.sin(normX * Math.PI));
+                        ctx.beginPath();
+                        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            } else if (patternType === 'sparkles') {
+                const numSparkles = Math.floor(randomRange(25, 55));
+                for (let i = 0; i < numSparkles; i++) {
+                    let sx = cx + randomRange(-bodyWidth, bodyWidth);
+                    let sy = cy + randomRange(-bodyHeight, bodyHeight);
+                    let size = randomRange(4, 12);
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy - size); ctx.lineTo(sx + size*0.25, sy - size*0.25);
+                    ctx.lineTo(sx + size, sy); ctx.lineTo(sx + size*0.25, sy + size*0.25);
+                    ctx.lineTo(sx, sy + size); ctx.lineTo(sx - size*0.25, sy + size*0.25);
+                    ctx.lineTo(sx - size, sy); ctx.lineTo(sx - size*0.25, sy - size*0.25);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            } else if (patternType === 'waves') {
+                ctx.lineWidth = randomRange(3, 5);
+                for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
+                    ctx.beginPath();
+                    for (let x = cx - bodyWidth; x <= cx + bodyWidth; x += 6) {
+                        let waveY = y + Math.sin((x / patternScale) * Math.PI) * (patternScale * 0.3);
+                        if (x === cx - bodyWidth) ctx.moveTo(x, waveY);
+                        else ctx.lineTo(x, waveY);
+                    }
+                    ctx.stroke();
+                }
+            } else if (patternType === 'chevrons') {
+                ctx.lineWidth = randomRange(3, 5);
+                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale * 1.2) {
+                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 1.2) {
+                        ctx.beginPath();
+                        ctx.moveTo(x - patternScale*0.4, y - patternScale*0.4);
+                        ctx.lineTo(x, y);
+                        ctx.lineTo(x - patternScale*0.4, y + patternScale*0.4);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            ctx.restore(); // Remove clipping mask
+
+            // Global sparkles for shiny fish
+            if (isShiny) {
+                ctx.fillStyle = "white";
+                for(let i = 0; i < 15; i++) {
+                    let sx = cx + randomRange(-bodyWidth, bodyWidth);
+                    let sy = cy + randomRange(-bodyHeight, bodyHeight);
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy - 10); ctx.lineTo(sx + 3, sy - 3);
+                    ctx.lineTo(sx + 10, sy); ctx.lineTo(sx + 3, sy + 3);
+                    ctx.lineTo(sx, sy + 10); ctx.lineTo(sx - 3, sy + 3);
+                    ctx.lineTo(sx - 10, sy); ctx.lineTo(sx - 3, sy - 3);
+                    ctx.fill();
+                }
+            }
+
+            // 5. Draw Eye
+            const eyeX = cx + bodyWidth * (bodyType === 'diamond' || bodyType === 'triangle' ? 0.2 : 0.5);
+            const eyeY = cy - bodyHeight * 0.2;
+            const eyeRadius = randomRange(12, 28);
+            
+            ctx.fillStyle = "white";
+            
+            if (eyeType === 'square') {
+                ctx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius * 2, eyeRadius * 2);
+                ctx.fillStyle = "black";
+                ctx.fillRect(eyeX, eyeY - eyeRadius / 2, eyeRadius, eyeRadius);
+            } else if (eyeType === 'star') {
+                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                for(let i=0; i<5; i++) {
+                    let a = (Math.PI * 2 * i) / 5 - Math.PI/2;
+                    let pX = eyeX + Math.cos(a) * (eyeRadius*0.7);
+                    let pY = eyeY + Math.sin(a) * (eyeRadius*0.7);
+                    i === 0 ? ctx.moveTo(pX, pY) : ctx.lineTo(pX, pY);
+                }
+                ctx.closePath(); ctx.fill();
+            } else if (eyeType === 'dot') {
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius*0.4, 0, Math.PI*2); ctx.fill();
+            } else {
+                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = "black";
+                if (eyeType === 'slit') {
+                    ctx.beginPath(); ctx.ellipse(eyeX + eyeRadius * 0.2, eyeY, eyeRadius * 0.2, eyeRadius * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+                } else if (eyeType === 'anime') {
+                    ctx.beginPath(); ctx.ellipse(eyeX, eyeY, eyeRadius * 0.7, eyeRadius * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.beginPath(); ctx.arc(eyeX - eyeRadius*0.2, eyeY - eyeRadius*0.3, eyeRadius*0.25, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(eyeX + eyeRadius*0.2, eyeY + eyeRadius*0.3, eyeRadius*0.1, 0, Math.PI*2); ctx.fill();
+                } else if (eyeType === 'sleepy') {
+                    ctx.beginPath(); ctx.arc(eyeX + (eyeRadius * 0.2), eyeY + eyeRadius*0.2, eyeRadius * 0.4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = bodyColor;
+                    ctx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius*2, eyeRadius*1.1);
+                    ctx.strokeStyle = "black"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(eyeX - eyeRadius, eyeY + eyeRadius*0.1); ctx.lineTo(eyeX + eyeRadius, eyeY + eyeRadius*0.1); ctx.stroke();
+                } else {
+                    ctx.beginPath(); ctx.arc(eyeX + (eyeRadius * 0.2), eyeY, eyeRadius * 0.5, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        }
+
+        // Listeners & Init
+        window.addEventListener('resize', resizeAndDraw);
+        resizeAndDraw();
+    </script>
+</body>
+</html>
