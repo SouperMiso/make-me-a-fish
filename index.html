@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Daily Device Fish</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
     <style>
-        body, html {
+        * {
+            box-sizing: border-box;
+        }
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -19,7 +23,7 @@
             overflow: hidden;
             font-family: sans-serif;
         }
-        
+
         #title {
             position: absolute;
             top: 40px;
@@ -28,15 +32,285 @@
             color: #ffffff;
             font-family: 'Press Start 2P', monospace;
             font-size: 24px;
-            text-shadow: 4px 4px 0px #333333; 
+            text-shadow: 4px 4px 0px #333333;
             z-index: 10;
             text-align: center;
-            width: 100%;
+            width: 90%;
             pointer-events: none;
             transition: color 0.5s, text-shadow 0.5s;
         }
 
+        #uiOverlay {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            border: none;
+            color: white;
+            padding: 14px 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.15s, opacity 0.2s, background 0.3s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            background: #4a5568;
+            cursor: default;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        .dropdown-group {
+            position: relative;
+            display: inline-flex;
+        }
+
+        #copyBtn {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .dropdown-toggle {
+            padding: 14px 12px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 10px;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            bottom: 125%;
+            right: 0;
+            background: #102530;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            min-width: 190px;
+            overflow: hidden;
+        }
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 14px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: block;
+        }
+        .dropdown-item:hover {
+            background: rgba(0, 176, 155, 0.4);
+        }
+
+        #tankToggleBtn {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: none;
+            color: white;
+            padding: 16px 12px;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            z-index: 20;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s, opacity 0.2s;
+        }
+        #tankToggleBtn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        #tankToggleBtn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        #tankDrawer {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 380px;
+            max-width: 85vw;
+            height: 100%;
+            background: #102530;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+            z-index: 30;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        #tankDrawer.open {
+            right: 0;
+        }
+
+        .tank-header {
+            padding: 10px 16px;
+            background: #08161f;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tank-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .theme-buttons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tank-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .tank-label {
+            color: white;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            white-space: nowrap;
+        }
+
+        .tank-selector {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            cursor: pointer;
+            max-width: 150px;
+            outline: none;
+            background-color: #102530;
+        }
+        .tank-selector option {
+            background: #102530;
+            color: white;
+        }
+        .tank-selector:focus {
+            border-color: #00b09b;
+        }
+
+        .tank-full-badge {
+            background: #e74c3c;
+            color: #fff;
+            font-size: 7px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Press Start 2P', monospace;
+            white-space: nowrap;
+            display: none;
+        }
+        .tank-full-badge.visible {
+            display: inline-block;
+        }
+
+        .tank-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-family: 'Press Start 2P', monospace;
+            transition: background 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+        .action-btn.active {
+            background: #00b09b;
+            border-color: #96c93d;
+            box-shadow: 0 0 8px rgba(0, 176, 155, 0.6);
+        }
+
+        #tankCanvas {
+            width: 100%;
+            flex-grow: 1;
+            display: block;
+            background: #0f2027;
+            cursor: crosshair;
+        }
         canvas {
+            display: block;
+        }
+
+        #pelletCounter {
+            position: absolute;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+        #pelletCounter.visible {
             display: block;
         }
 
@@ -45,52 +319,279 @@
                 font-size: 16px;
                 top: 25px;
             }
+            #tankDrawer {
+                width: 100vw;
+                max-width: 100vw;
+                right: -100vw;
+            }
+            #uiOverlay {
+                bottom: 25px;
+                gap: 8px;
+            }
+            .btn {
+                padding: 10px 14px;
+                font-size: 9px;
+            }
+            .tank-header {
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            .tank-header-row {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .tank-selector {
+                font-size: 7px;
+                max-width: 110px;
+                padding: 3px 6px;
+            }
+            .action-btn {
+                font-size: 8px;
+                padding: 4px 6px;
+            }
+            .tank-label {
+                font-size: 8px;
+            }
+            #pelletCounter {
+                font-size: 6px;
+                bottom: 70px;
+                padding: 2px 8px;
+            }
         }
     </style>
 </head>
 <body>
 
     <div id="title">11:11, make a fih!</div>
-
     <canvas id="fishCanvas"></canvas>
+    <div id="pelletCounter" class="visible">🍱 0 / 40</div>
+
+    <div id="uiOverlay">
+        <button id="keepBtn" class="btn">KEEP 🐟</button>
+        <div class="dropdown-group">
+            <button id="copyBtn" class="btn" onclick="copyFishToClipboard()">COPY TO CLIPBOARD 📋</button>
+            <button id="dropdownToggle" class="btn dropdown-toggle" onclick="toggleDropdown(event)">▼</button>
+            <div id="dropdownMenu" class="dropdown-menu">
+                <button class="dropdown-item" onclick="downloadFishSVG()">DOWNLOAD SVG 🎨</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="tankToggleBtn" onclick="toggleTank()">FIH TANK</button>
+
+    <div id="tankDrawer">
+        <div class="tank-header">
+            <div class="tank-header-row">
+                <div class="theme-buttons">
+                    <button class="action-btn active" id="dayBtn" onclick="setTankTheme('day')" title="Day Mode">☀️</button>
+                    <button class="action-btn" id="nightBtn" onclick="setTankTheme('night')" title="Night Mode">🌙</button>
+                </div>
+                <div class="tank-actions">
+                    <button class="action-btn" onclick="popOutTank()" title="Pop out into picture-in-picture window">POP OUT ↗</button>
+                    <button class="action-btn" onclick="toggleTank()">✕</button>
+                </div>
+            </div>
+            <div class="tank-header-row">
+                <span class="tank-label" id="drawerTankLabel">Tank 1</span>
+                <div class="tank-selector-group">
+                    <select id="drawerTankSelector" class="tank-selector" onchange="onDrawerTankChange()"></select>
+                    <span id="drawerFullBadge" class="tank-full-badge">FULL</span>
+                </div>
+            </div>
+        </div>
+        <canvas id="tankCanvas"></canvas>
+    </div>
 
     <script>
-        // --- 1. Local Storage for Device ID ---
+        // ─── MULTI‑TANK DATA LAYER ────────────────────────────────────────────────
+
+        const MAX_FISH_PER_TANK = 15;
+
+        function getTankData() {
+            let raw = localStorage.getItem("tank_data");
+            if (raw) {
+                try {
+                    let parsed = JSON.parse(raw);
+                    if (parsed.tanks && parsed.tanks.length > 0 && parsed.currentTankId) {
+                        return parsed;
+                    }
+                } catch (_) {}
+            }
+            let oldSeeds = localStorage.getItem("saved_fish_seeds");
+            let fish = [];
+            if (oldSeeds) {
+                try {
+                    let arr = JSON.parse(oldSeeds);
+                    if (Array.isArray(arr)) fish = arr;
+                } catch (_) {}
+                localStorage.removeItem("saved_fish_seeds");
+            }
+            return {
+                tanks: [{ id: "tank_1", fish: fish }],
+                currentTankId: "tank_1"
+            };
+        }
+
+        function saveTankData(data) {
+            localStorage.setItem("tank_data", JSON.stringify(data));
+        }
+
+        function getCurrentTankId() {
+            let data = getTankData();
+            return data.currentTankId;
+        }
+
+        function getTankById(id) {
+            let data = getTankData();
+            return data.tanks.find(t => t.id === id) || null;
+        }
+
+        function getCurrentTank() {
+            let data = getTankData();
+            return data.tanks.find(t => t.id === data.currentTankId) || data.tanks[0];
+        }
+
+        function getAllTanks() {
+            return getTankData().tanks;
+        }
+
+        function getFishForTank(tankId) {
+            let tank = getTankById(tankId);
+            return tank ? tank.fish : [];
+        }
+
+        function getCurrentFish() {
+            let tank = getCurrentTank();
+            return tank ? tank.fish : [];
+        }
+
+        function addFishToCurrentTank(seed) {
+            let data = getTankData();
+            let tank = data.tanks.find(t => t.id === data.currentTankId);
+            if (!tank) return false;
+            if (tank.fish.includes(seed)) return false;
+            tank.fish.push(seed);
+            if (tank.fish.length >= MAX_FISH_PER_TANK) {
+                let nextNum = data.tanks.length + 1;
+                let newId = "tank_" + nextNum;
+                data.tanks.push({ id: newId, fish: [] });
+                data.currentTankId = newId;
+            }
+            saveTankData(data);
+            return true;
+        }
+
+        function getTankDisplayName(tank) {
+            let idx = getAllTanks().findIndex(t => t.id === tank.id);
+            return "Tank " + (idx + 1);
+        }
+
+        function isTankFull(tank) {
+            return tank.fish.length >= MAX_FISH_PER_TANK;
+        }
+
+        function getSavedFish() {
+            return getCurrentFish();
+        }
+
+        function saveFishSeed(seed) {
+            return addFishToCurrentTank(seed);
+        }
+
+        // ─── TANK SELECTOR UI ─────────────────────────────────────────────────────
+
+        function populateTankSelector(selectorEl, selectedId) {
+            let tanks = getAllTanks();
+            selectorEl.innerHTML = '';
+            tanks.forEach((t, idx) => {
+                let opt = document.createElement('option');
+                opt.value = t.id;
+                let label = "Tank " + (idx + 1) + " (" + t.fish.length + " fish)";
+                if (isTankFull(t)) label += " FULL";
+                opt.textContent = label;
+                if (t.id === selectedId) opt.selected = true;
+                selectorEl.appendChild(opt);
+            });
+        }
+
+        function updateDrawerUI() {
+            let data = getTankData();
+            let current = data.tanks.find(t => t.id === data.currentTankId) || data.tanks[0];
+            let selector = document.getElementById('drawerTankSelector');
+            populateTankSelector(selector, data.currentTankId);
+            let label = document.getElementById('drawerTankLabel');
+            let idx = data.tanks.indexOf(current);
+            label.textContent = "Tank " + (idx + 1);
+            let badge = document.getElementById('drawerFullBadge');
+            if (isTankFull(current)) {
+                badge.classList.add('visible');
+            } else {
+                badge.classList.remove('visible');
+            }
+            syncTankFish();
+        }
+
+        function onDrawerTankChange() {
+            let selector = document.getElementById('drawerTankSelector');
+            let selectedId = selector.value;
+            let data = getTankData();
+            if (data.currentTankId !== selectedId) {
+                data.currentTankId = selectedId;
+                saveTankData(data);
+                updateDrawerUI();
+                if (isTankOpen || activePipCanvas) {}
+            }
+        }
+
+        // ─── TIME & SEED LOGIC ──────────────────────────────────────────────────
+
         let deviceId = localStorage.getItem("fish_device_id");
         if (!deviceId) {
             deviceId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             localStorage.setItem("fish_device_id", deviceId);
         }
 
-        // --- 2. Time Logic (11:11 PST/PDT Rollover) ---
+        let devSeedOverride = null;
+        let currentTankTheme = 'day';
+
         function getFishDayString() {
             let now = new Date();
             let ptFormatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: 'America/Los_Angeles',
-                year: 'numeric', month: 'numeric', day: 'numeric',
-                hour: 'numeric', minute: 'numeric', hour12: false
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: false
             });
-            
             let parts = ptFormatter.formatToParts(now);
             let pt = {};
-            parts.forEach(p => {
-                if(p.type !== 'literal') pt[p.type] = parseInt(p.value);
-            });
-
+            parts.forEach(p => { if (p.type !== 'literal') pt[p.type] = parseInt(p.value); });
             let isPast1111 = (pt.hour > 11) || (pt.hour === 11 && pt.minute >= 11);
             let fishDate = new Date(pt.year, pt.month - 1, pt.day);
-            if (!isPast1111) {
-                fishDate.setDate(fishDate.getDate() - 1);
-            }
+            if (!isPast1111) fishDate.setDate(fishDate.getDate() - 1);
             return `${fishDate.getFullYear()}-${fishDate.getMonth() + 1}-${fishDate.getDate()}`;
         }
 
-        // --- 3. Seeded Random Number Generator ---
+        function getCurrentDailySeed() {
+            if (devSeedOverride) return devSeedOverride;
+            return deviceId + "-" + getFishDayString();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'm' || e.key === 'M')) {
+                e.preventDefault();
+                devSeedOverride = deviceId + "-dev-" + Date.now() + "-" + Math.floor(Math.random() * 1000000);
+                resizeAndDraw();
+            }
+        });
+
+        // ─── SEEDED RANDOM ──────────────────────────────────────────────────────
+
         function stringToSeed(str) {
             let h = 0xdeadbeef;
-            for(let i = 0; i < str.length; i++) {
-                h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
-            }
+            for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
             return (h ^ h >>> 16) >>> 0;
         }
 
@@ -103,36 +604,1234 @@
             }
         }
 
-        // --- 4. Canvas Drawing Logic ---
+        // ─── COLOR UTILITIES ────────────────────────────────────────────────────
+
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+            let r, g, b;
+            if (s === 0) { r = g = b = l; } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        function hslToHex(h, s, l) {
+            const [r, g, b] = hslToRgb(h, s, l);
+            return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+
+        function getFishPalette(rand, isShiny) {
+            if (isShiny) {
+                return { bodyH: 48, bodyS: 100, bodyL: 55, finH: 335, finS: 100, finL: 60, scaleH: 60, scaleS: 100,
+                    scaleL: 75 };
+            }
+            const aestheticPalettes = [
+                { bodyH: 195, bodyS: 90, bodyL: 48, finH: 340, finS: 95, finL: 60, scaleH: 170 },
+                { bodyH: 275, bodyS: 85, bodyL: 52, finH: 45, finS: 100, finL: 55, scaleH: 295 },
+                { bodyH: 160, bodyS: 90, bodyL: 44, finH: 18, finS: 95, finL: 62, scaleH: 140 },
+                { bodyH: 12, bodyS: 95, bodyL: 55, finH: 205, finS: 90, finL: 52, scaleH: 35 },
+                { bodyH: 325, bodyS: 90, bodyL: 55, finH: 175, finS: 90, finL: 48, scaleH: 340 },
+                { bodyH: 220, bodyS: 95, bodyL: 52, finH: 28, finS: 100, finL: 58, scaleH: 240 },
+                { bodyH: 85, bodyS: 85, bodyL: 46, finH: 280, finS: 90, finL: 62, scaleH: 110 },
+                { bodyH: 350, bodyS: 90, bodyL: 50, finH: 42, finS: 100, finL: 56, scaleH: 15 },
+                { bodyH: 180, bodyS: 95, bodyL: 42, finH: 125, finS: 90, finL: 52, scaleH: 200 },
+                { bodyH: 32, bodyS: 100, bodyL: 52, finH: 310, finS: 90, finL: 58, scaleH: 52 },
+                { bodyH: 240, bodyS: 85, bodyL: 60, finH: 165, finS: 90, finL: 52, scaleH: 260 },
+                { bodyH: 5, bodyS: 90, bodyL: 52, finH: 50, finS: 100, finL: 58, scaleH: 25 }
+            ];
+            const base = aestheticPalettes[Math.floor(rand() * aestheticPalettes.length)];
+            const hOffset = Math.floor(rand() * 16) - 8;
+            return {
+                bodyH: (base.bodyH + hOffset + 360) % 360,
+                bodyS: base.bodyS,
+                bodyL: base.bodyL,
+                finH: (base.finH + hOffset + 360) % 360,
+                finS: base.finS,
+                finL: base.finL,
+                scaleH: (base.scaleH + hOffset + 360) % 360,
+                scaleS: base.bodyS,
+                scaleL: Math.min(80, base.bodyL + 20)
+            };
+        }
+
+        // ─── FISH BODY DIMENSIONS (for collision) ─────────────────────────────
+
+        function getFishBodyDimensions(seedString) {
+            const rand = seededRandom(stringToSeed(seedString));
+
+            function randomRange(min, max) { return min + rand() * (max - min); }
+
+            const bodyWidth = randomRange(12, 220);
+            const bodyHeight = randomRange(8, 140);
+            return { bodyWidth, bodyHeight };
+        }
+
+        // ─── FISH SPRITE CACHING ──────────────────────────────────────────────
+
+        const fishSpriteCache = new Map();
+
+        function getFishSprite(seedString, isLowQuality = false) {
+            const cacheKey = seedString + (isLowQuality ? "_low" : "_high");
+            if (fishSpriteCache.has(cacheKey)) return fishSpriteCache.get(cacheKey);
+
+            const spriteResMultiplier = isLowQuality ? 1.0 : 3.0;
+            const rand = seededRandom(stringToSeed(seedString));
+
+            function randomRange(min, max) { return min + rand() * (max - min); }
+
+            function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
+
+            const isShiny = rand() < 0.000000001;
+            const bodyType = pick([
+                'ellipse', 'box', 'diamond', 'pill', 'hexagon', 'trapezoid', 'teardrop', 'triangle',
+                'peanut', 'egg', 'arrow', 'bowtie', 'stout_oval'
+            ]);
+            const tailType = pick([
+                'triangle', 'forked', 'paddle', 'crescent', 'spiky', 'double_fan',
+                'pin_tail', 'crown', 'poly_fan', 'crystal_shard', 'stepped_tail',
+                'arrow_geo', 'diamond_tail', 'tri_blade'
+            ]);
+            const finType = pick([
+                'spiky', 'poly_wing', 'crystal_fin', 'stepped_fin', 'shard_fin',
+                'trapezoid', 'sail_geo', 'blade_fin', 'tiny'
+            ]);
+            const patternType = pick([
+                'scales', 'stripes', 'grid', 'x_cross', 'halftone', 'sparkles', 'waves', 'chevrons',
+                'polka_ring', 'triangles', 'argyle', 'confetti', 'diamonds', 'concentric_circles',
+                'hex_grid', 'brick', 'stripes_horizontal', 'diagonal_stripes', 'zigzag', 'checkerboard', 'none'
+            ]);
+            const eyeType = pick([
+                'round', 'square', 'diamond', 'hexagon', 'slit', 'anime',
+                'sleepy', 'star', 'dot', 'winky', 'glasses', 'angry_geo',
+                'surprised_geo', 'focused_geo', 'cyborg_geo'
+            ]);
+
+            const bodyWidth = randomRange(12, 220);
+            const bodyHeight = randomRange(8, 140);
+            const tailSize = randomRange(12, 95);
+            const tailAngle = randomRange(0.3, 0.9);
+            const palette = getFishPalette(rand, isShiny);
+            const bodyColor = `hsl(${palette.bodyH}, ${palette.bodyS}%, ${palette.bodyL}%)`;
+            const finColor = `hsl(${palette.finH}, ${palette.finS}%, ${palette.finL}%)`;
+            const scaleColor = `hsla(${palette.scaleH}, ${palette.scaleS}%, ${palette.scaleL}%, 0.55)`;
+
+            const finBottomExt = (finType === 'sail_geo' || finType === 'poly_wing' ? 130 :
+                (finType === 'spiky' || finType === 'stepped_fin' ? 75 : 90));
+            const pad = isShiny ? 65 : 30;
+
+            const fcx = bodyWidth + pad;
+            const fcy = bodyHeight + finBottomExt + pad;
+
+            const bodyCanvas = document.createElement('canvas');
+            bodyCanvas.width = Math.ceil(fcx * 2 * spriteResMultiplier);
+            bodyCanvas.height = Math.ceil(fcy * 2 * spriteResMultiplier);
+            const bCtx = bodyCanvas.getContext('2d');
+            bCtx.scale(spriteResMultiplier, spriteResMultiplier);
+            if (isShiny && !isLowQuality) { bCtx.shadowBlur = 40;
+                bCtx.shadowColor = "gold"; }
+
+            function traceBody(c) {
+                c.beginPath();
+                if (bodyType === 'ellipse') c.ellipse(fcx, fcy, bodyWidth, bodyHeight, 0, 0, Math.PI * 2);
+                else if (bodyType === 'box') c.roundRect(fcx - bodyWidth, fcy - bodyHeight, bodyWidth * 2, bodyHeight * 2,
+                    20);
+                else if (bodyType === 'pill') c.roundRect(fcx - bodyWidth, fcy - bodyHeight, bodyWidth * 2, bodyHeight * 2,
+                    bodyHeight);
+                else if (bodyType === 'diamond') {
+                    c.moveTo(fcx - bodyWidth, fcy);
+                    c.lineTo(fcx, fcy - bodyHeight);
+                    c.lineTo(fcx + bodyWidth, fcy);
+                    c.lineTo(fcx, fcy + bodyHeight);
+                } else if (bodyType === 'hexagon') {
+                    for (let i = 0; i < 6; i++) {
+                        let angle = (Math.PI / 3) * i;
+                        let px = fcx + bodyWidth * Math.cos(angle);
+                        let py = fcy + bodyHeight * Math.sin(angle);
+                        i === 0 ? c.moveTo(px, py) : c.lineTo(px, py);
+                    }
+                } else if (bodyType === 'trapezoid') {
+                    c.moveTo(fcx - bodyWidth, fcy + bodyHeight);
+                    c.lineTo(fcx + bodyWidth, fcy + bodyHeight);
+                    c.lineTo(fcx + bodyWidth * 0.6, fcy - bodyHeight);
+                    c.lineTo(fcx - bodyWidth * 0.6, fcy - bodyHeight);
+                } else if (bodyType === 'teardrop') {
+                    c.moveTo(fcx - bodyWidth, fcy);
+                    c.bezierCurveTo(fcx - bodyWidth, fcy - bodyHeight, fcx + bodyWidth, fcy - bodyHeight, fcx + bodyWidth,
+                    fcy);
+                    c.bezierCurveTo(fcx + bodyWidth, fcy + bodyHeight, fcx - bodyWidth, fcy + bodyHeight, fcx - bodyWidth,
+                        fcy);
+                } else if (bodyType === 'triangle') {
+                    c.moveTo(fcx - bodyWidth, fcy + bodyHeight);
+                    c.lineTo(fcx + bodyWidth, fcy);
+                    c.lineTo(fcx - bodyWidth, fcy - bodyHeight);
+                } else if (bodyType === 'peanut') {
+                    c.moveTo(fcx - bodyWidth, fcy);
+                    c.bezierCurveTo(fcx - bodyWidth, fcy - bodyHeight * 1.1, fcx - bodyWidth * 0.1, fcy - bodyHeight * 0.4,
+                        fcx + bodyWidth * 0.5, fcy - bodyHeight);
+                    c.bezierCurveTo(fcx + bodyWidth * 0.9, fcy - bodyHeight * 0.9, fcx + bodyWidth, fcy - bodyHeight * 0.4,
+                        fcx + bodyWidth, fcy);
+                    c.bezierCurveTo(fcx + bodyWidth, fcy + bodyHeight * 0.4, fcx + bodyWidth * 0.9, fcy + bodyHeight * 0.9,
+                        fcx + bodyWidth * 0.5, fcy + bodyHeight);
+                    c.bezierCurveTo(fcx - bodyWidth * 0.1, fcy + bodyHeight * 0.4, fcx - bodyWidth, fcy + bodyHeight * 1.1,
+                        fcx - bodyWidth, fcy);
+                } else if (bodyType === 'egg') {
+                    c.moveTo(fcx - bodyWidth, fcy);
+                    c.bezierCurveTo(fcx - bodyWidth, fcy - bodyHeight * 1.2, fcx + bodyWidth * 0.6, fcy - bodyHeight * 0.7,
+                        fcx + bodyWidth, fcy);
+                    c.bezierCurveTo(fcx + bodyWidth * 0.6, fcy + bodyHeight * 0.7, fcx - bodyWidth, fcy + bodyHeight * 1.2,
+                        fcx - bodyWidth, fcy);
+                } else if (bodyType === 'arrow') {
+                    c.moveTo(fcx + bodyWidth, fcy);
+                    c.lineTo(fcx - bodyWidth * 0.3, fcy - bodyHeight);
+                    c.lineTo(fcx - bodyWidth, fcy - bodyHeight * 0.6);
+                    c.lineTo(fcx - bodyWidth * 0.6, fcy);
+                    c.lineTo(fcx - bodyWidth, fcy + bodyHeight * 0.6);
+                    c.lineTo(fcx - bodyWidth * 0.3, fcy + bodyHeight);
+                } else if (bodyType === 'bowtie') {
+                    c.moveTo(fcx - bodyWidth, fcy - bodyHeight);
+                    c.lineTo(fcx, fcy - bodyHeight * 0.3);
+                    c.lineTo(fcx + bodyWidth, fcy - bodyHeight);
+                    c.lineTo(fcx + bodyWidth, fcy + bodyHeight);
+                    c.lineTo(fcx, fcy + bodyHeight * 0.3);
+                    c.lineTo(fcx - bodyWidth, fcy + bodyHeight);
+                } else if (bodyType === 'stout_oval') {
+                    c.ellipse(fcx, fcy, bodyWidth * 0.85, bodyHeight * 1.1, 0, 0, Math.PI * 2);
+                }
+                c.closePath();
+            }
+
+            function drawFin(c, isTop) {
+                const dir = isTop ? -1 : 1;
+                c.fillStyle = finColor;
+                c.beginPath();
+                if (finType === 'poly_wing') {
+                    c.moveTo(fcx - bodyWidth * 0.4, fcy + bodyHeight * 0.6 * dir);
+                    c.lineTo(fcx - bodyWidth * 0.1, fcy + (bodyHeight + 90) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.4, fcy + (bodyHeight + 110) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.5, fcy + bodyHeight * 0.7 * dir);
+                } else if (finType === 'spiky') {
+                    c.moveTo(fcx - bodyWidth * 0.3, fcy + bodyHeight * dir);
+                    c.lineTo(fcx - 10, fcy + (bodyHeight + 70) * dir);
+                    c.lineTo(fcx + 20, fcy + (bodyHeight + 35) * dir);
+                    c.lineTo(fcx + 50, fcy + (bodyHeight + 85) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.5, fcy + bodyHeight * dir);
+                } else if (finType === 'crystal_fin') {
+                    c.moveTo(fcx - bodyWidth * 0.3, fcy + bodyHeight * 0.7 * dir);
+                    c.lineTo(fcx, fcy + (bodyHeight + 110) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.3, fcy + (bodyHeight + 50) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.45, fcy + bodyHeight * 0.8 * dir);
+                } else if (finType === 'stepped_fin') {
+                    c.moveTo(fcx - bodyWidth * 0.4, fcy + bodyHeight * dir);
+                    c.lineTo(fcx - bodyWidth * 0.4, fcy + (bodyHeight + 40) * dir);
+                    c.lineTo(fcx - bodyWidth * 0.1, fcy + (bodyHeight + 40) * dir);
+                    c.lineTo(fcx - bodyWidth * 0.1, fcy + (bodyHeight + 80) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.2, fcy + (bodyHeight + 80) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.2, fcy + bodyHeight * dir);
+                } else if (finType === 'shard_fin') {
+                    c.moveTo(fcx - bodyWidth * 0.5, fcy + bodyHeight * 0.8 * dir);
+                    c.lineTo(fcx - bodyWidth * 0.2, fcy + (bodyHeight + 95) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.1, fcy + (bodyHeight + 40) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.4, fcy + (bodyHeight + 85) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.5, fcy + bodyHeight * 0.8 * dir);
+                } else if (finType === 'trapezoid') {
+                    c.moveTo(fcx - bodyWidth * 0.4, fcy + bodyHeight * dir);
+                    c.lineTo(fcx - bodyWidth * 0.2, fcy + (bodyHeight + 65) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.3, fcy + (bodyHeight + 65) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.5, fcy + bodyHeight * dir);
+                } else if (finType === 'sail_geo') {
+                    c.moveTo(fcx - bodyWidth * 0.5, fcy + bodyHeight * 0.5 * dir);
+                    c.lineTo(fcx - bodyWidth * 0.1, fcy + (bodyHeight + 140) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.3, fcy + (bodyHeight + 90) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.5, fcy + bodyHeight * 0.6 * dir);
+                } else if (finType === 'blade_fin') {
+                    c.moveTo(fcx - bodyWidth * 0.3, fcy + bodyHeight * 0.8 * dir);
+                    c.lineTo(fcx + bodyWidth * 0.1, fcy + (bodyHeight + 115) * dir);
+                    c.lineTo(fcx + bodyWidth * 0.6, fcy + bodyHeight * 0.7 * dir);
+                } else if (finType === 'tiny') {
+                    c.moveTo(fcx - 30, fcy + bodyHeight * dir);
+                    c.lineTo(fcx, fcy + (bodyHeight + 35) * dir);
+                    c.lineTo(fcx + 30, fcy + bodyHeight * dir);
+                }
+                c.closePath();
+                c.fill();
+            }
+
+            drawFin(bCtx, true);
+            drawFin(bCtx, false);
+
+            bCtx.save();
+            traceBody(bCtx);
+            bCtx.fillStyle = bodyColor;
+            bCtx.fill();
+            bCtx.clip();
+            bCtx.shadowBlur = 0;
+
+            bCtx.strokeStyle = scaleColor;
+            bCtx.fillStyle = scaleColor;
+            const patternScale = randomRange(12, 22);
+
+            if (patternType === 'scales') {
+                bCtx.lineWidth = randomRange(2, 5);
+                for (let x = fcx + bodyWidth; x > fcx - bodyWidth; x -= patternScale * 0.8) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.2) {
+                        let yOffset = (Math.floor(x / patternScale) % 2 === 0) ? (patternScale * 0.6) : 0;
+                        bCtx.beginPath();
+                        bCtx.arc(x, y + yOffset, patternScale, -Math.PI / 2, Math.PI / 2);
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'stripes') {
+                bCtx.lineWidth = randomRange(8, 20);
+                for (let x = fcx - bodyWidth + 10; x < fcx + bodyWidth; x += patternScale * 1.5) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(x, fcy - bodyHeight);
+                    bCtx.lineTo(x, fcy + bodyHeight);
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'grid') {
+                bCtx.lineWidth = randomRange(3, 6);
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(x, fcy - bodyHeight);
+                    bCtx.lineTo(x, fcy + bodyHeight);
+                    bCtx.stroke();
+                }
+                for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(fcx - bodyWidth, y);
+                    bCtx.lineTo(fcx + bodyWidth, y);
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'x_cross') {
+                bCtx.lineWidth = randomRange(2, 4);
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale) {
+                        bCtx.beginPath();
+                        bCtx.moveTo(x - patternScale * 0.3, y - patternScale * 0.3);
+                        bCtx.lineTo(x + patternScale * 0.3, y + patternScale * 0.3);
+                        bCtx.moveTo(x + patternScale * 0.3, y - patternScale * 0.3);
+                        bCtx.lineTo(x - patternScale * 0.3, y + patternScale * 0.3);
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'halftone') {
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 0.9) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 0.9) {
+                        let normX = (x - (fcx - bodyWidth)) / (bodyWidth * 2);
+                        let dotRadius = Math.max(1.5, (patternScale * 0.45) * Math.sin(normX * Math.PI));
+                        bCtx.beginPath();
+                        bCtx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                        bCtx.fill();
+                    }
+                }
+            } else if (patternType === 'sparkles') {
+                for (let i = 0; i < Math.floor(randomRange(25, 55)); i++) {
+                    let sx = fcx + randomRange(-bodyWidth, bodyWidth);
+                    let sy = fcy + randomRange(-bodyHeight, bodyHeight);
+                    let size = randomRange(4, 12);
+                    bCtx.beginPath();
+                    bCtx.moveTo(sx, sy - size);
+                    bCtx.lineTo(sx + size * 0.25, sy - size * 0.25);
+                    bCtx.lineTo(sx + size, sy);
+                    bCtx.lineTo(sx + size * 0.25, sy + size * 0.25);
+                    bCtx.lineTo(sx, sy + size);
+                    bCtx.lineTo(sx - size * 0.25, sy + size * 0.25);
+                    bCtx.lineTo(sx - size, sy);
+                    bCtx.lineTo(sx - size * 0.25, sy - size * 0.25);
+                    bCtx.closePath();
+                    bCtx.fill();
+                }
+            } else if (patternType === 'waves') {
+                bCtx.lineWidth = randomRange(3, 5);
+                for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale) {
+                    bCtx.beginPath();
+                    for (let x = fcx - bodyWidth; x <= fcx + bodyWidth; x += 6) {
+                        let waveY = y + Math.sin((x / patternScale) * Math.PI) * (patternScale * 0.3);
+                        x === fcx - bodyWidth ? bCtx.moveTo(x, waveY) : bCtx.lineTo(x, waveY);
+                    }
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'chevrons') {
+                bCtx.lineWidth = randomRange(3, 5);
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 1.2) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.2) {
+                        bCtx.beginPath();
+                        bCtx.moveTo(x - patternScale * 0.4, y - patternScale * 0.4);
+                        bCtx.lineTo(x, y);
+                        bCtx.lineTo(x - patternScale * 0.4, y + patternScale * 0.4);
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'polka_ring') {
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 1.2) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.2) {
+                        bCtx.lineWidth = 3;
+                        bCtx.beginPath();
+                        bCtx.arc(x, y, patternScale * 0.35, 0, Math.PI * 2);
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'triangles') {
+                for (let i = 0; i < Math.floor(randomRange(20, 45)); i++) {
+                    let tx = fcx + randomRange(-bodyWidth, bodyWidth);
+                    let ty = fcy + randomRange(-bodyHeight, bodyHeight);
+                    let ts = randomRange(6, 16);
+                    bCtx.beginPath();
+                    bCtx.moveTo(tx, ty - ts);
+                    bCtx.lineTo(tx + ts, ty + ts);
+                    bCtx.lineTo(tx - ts, ty + ts);
+                    bCtx.closePath();
+                    bCtx.fill();
+                }
+            } else if (patternType === 'argyle') {
+                bCtx.lineWidth = 2;
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 1.4) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.4) {
+                        bCtx.beginPath();
+                        bCtx.moveTo(x, y - patternScale * 0.5);
+                        bCtx.lineTo(x + patternScale * 0.5, y);
+                        bCtx.lineTo(x, y + patternScale * 0.5);
+                        bCtx.lineTo(x - patternScale * 0.5, y);
+                        bCtx.closePath();
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'confetti') {
+                for (let i = 0; i < Math.floor(randomRange(25, 50)); i++) {
+                    let cx = fcx + randomRange(-bodyWidth, bodyWidth);
+                    let cy = fcy + randomRange(-bodyHeight, bodyHeight);
+                    let cw = randomRange(6, 14),
+                        ch = randomRange(3, 8);
+                    bCtx.save();
+                    bCtx.translate(cx, cy);
+                    bCtx.rotate(randomRange(0, Math.PI));
+                    bCtx.fillRect(-cw / 2, -ch / 2, cw, ch);
+                    bCtx.restore();
+                }
+            } else if (patternType === 'diamonds') {
+                bCtx.lineWidth = randomRange(2, 4);
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 1.2) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.2) {
+                        bCtx.beginPath();
+                        bCtx.moveTo(x, y - patternScale * 0.4);
+                        bCtx.lineTo(x + patternScale * 0.4, y);
+                        bCtx.lineTo(x, y + patternScale * 0.4);
+                        bCtx.lineTo(x - patternScale * 0.4, y);
+                        bCtx.closePath();
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'concentric_circles') {
+                bCtx.lineWidth = 2;
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += patternScale * 2) {
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 2) {
+                        for (let r = patternScale * 0.3; r <= patternScale * 0.8; r += patternScale * 0.25) {
+                            bCtx.beginPath();
+                            bCtx.arc(x, y, r, 0, Math.PI * 2);
+                            bCtx.stroke();
+                        }
+                    }
+                }
+            } else if (patternType === 'hex_grid') {
+                bCtx.lineWidth = 2;
+                const h = patternScale * 0.866;
+                for (let y = fcy - bodyHeight - patternScale; y < fcy + bodyHeight + patternScale; y += h * 1.5) {
+                    for (let x = fcx - bodyWidth - patternScale; x < fcx + bodyWidth + patternScale; x += patternScale *
+                        1.732) {
+                        let shiftX = (Math.floor((y - (fcy - bodyHeight)) / (h * 1.5)) % 2 === 0) ? 0 : patternScale *
+                            0.866;
+                        bCtx.beginPath();
+                        for (let k = 0; k < 6; k++) {
+                            let a = (Math.PI / 3) * k;
+                            let px = x + shiftX + patternScale * 0.5 * Math.cos(a);
+                            let py = y + patternScale * 0.5 * Math.sin(a);
+                            k === 0 ? bCtx.moveTo(px, py) : bCtx.lineTo(px, py);
+                        }
+                        bCtx.closePath();
+                        bCtx.stroke();
+                    }
+                }
+            } else if (patternType === 'brick') {
+                bCtx.lineWidth = 2;
+                let rowIdx = 0;
+                for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 0.6) {
+                    let offset = (rowIdx % 2 === 0) ? 0 : patternScale * 0.6;
+                    bCtx.beginPath();
+                    bCtx.moveTo(fcx - bodyWidth, y);
+                    bCtx.lineTo(fcx + bodyWidth, y);
+                    bCtx.stroke();
+                    for (let x = fcx - bodyWidth + offset; x < fcx + bodyWidth; x += patternScale * 1.2) {
+                        bCtx.beginPath();
+                        bCtx.moveTo(x, y);
+                        bCtx.lineTo(x, y + patternScale * 0.6);
+                        bCtx.stroke();
+                    }
+                    rowIdx++;
+                }
+            } else if (patternType === 'stripes_horizontal') {
+                bCtx.lineWidth = randomRange(6, 14);
+                for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 1.2) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(fcx - bodyWidth, y);
+                    bCtx.lineTo(fcx + bodyWidth, y);
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'diagonal_stripes') {
+                bCtx.lineWidth = randomRange(4, 10);
+                for (let d = -bodyWidth - bodyHeight; d < bodyWidth + bodyHeight; d += patternScale * 1.2) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(fcx + d - bodyHeight, fcy - bodyHeight);
+                    bCtx.lineTo(fcx + d + bodyHeight, fcy + bodyHeight);
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'zigzag') {
+                bCtx.lineWidth = 3;
+                for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += patternScale * 0.8) {
+                    bCtx.beginPath();
+                    let up = true;
+                    for (let x = fcx - bodyWidth; x <= fcx + bodyWidth; x += patternScale * 0.5) {
+                        let zy = y + (up ? -patternScale * 0.3 : patternScale * 0.3);
+                        x === fcx - bodyWidth ? bCtx.moveTo(x, zy) : bCtx.lineTo(x, zy);
+                        up = !up;
+                    }
+                    bCtx.stroke();
+                }
+            } else if (patternType === 'checkerboard') {
+                let size = patternScale * 0.8;
+                let col = 0;
+                for (let x = fcx - bodyWidth; x < fcx + bodyWidth; x += size) {
+                    let row = 0;
+                    for (let y = fcy - bodyHeight; y < fcy + bodyHeight; y += size) {
+                        if ((col + row) % 2 === 0) {
+                            bCtx.fillRect(x, y, size, size);
+                        }
+                        row++;
+                    }
+                    col++;
+                }
+            }
+
+            bCtx.restore();
+
+            const eyeX = fcx + bodyWidth * (bodyType === 'diamond' || bodyType === 'triangle' || bodyType === 'arrow' ?
+                0.25 : 0.5);
+            const eyeY = fcy - bodyHeight * 0.2;
+            const eyeRadius = randomRange(8, 18);
+
+            bCtx.fillStyle = "white";
+            if (eyeType === 'square') {
+                bCtx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius * 2, eyeRadius * 2);
+                bCtx.fillStyle = "black";
+                bCtx.fillRect(eyeX, eyeY - eyeRadius / 2, eyeRadius, eyeRadius);
+            } else if (eyeType === 'diamond') {
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX, eyeY - eyeRadius * 1.2);
+                bCtx.lineTo(eyeX + eyeRadius * 1.1, eyeY);
+                bCtx.lineTo(eyeX, eyeY + eyeRadius * 1.2);
+                bCtx.lineTo(eyeX - eyeRadius * 1.1, eyeY);
+                bCtx.closePath();
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX, eyeY - eyeRadius * 0.6);
+                bCtx.lineTo(eyeX + eyeRadius * 0.5, eyeY);
+                bCtx.lineTo(eyeX, eyeY + eyeRadius * 0.6);
+                bCtx.lineTo(eyeX - eyeRadius * 0.5, eyeY);
+                bCtx.fillRect(eyeX - eyeRadius * 0.2, eyeY - eyeRadius * 0.4, eyeRadius * 0.7, eyeRadius * 0.8);
+            } else if (eyeType === 'hexagon') {
+                bCtx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    let a = (Math.PI / 3) * i;
+                    let px = eyeX + eyeRadius * Math.cos(a);
+                    let py = eyeY + eyeRadius * Math.sin(a);
+                    i === 0 ? bCtx.moveTo(px, py) : bCtx.lineTo(px, py);
+                }
+                bCtx.closePath();
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    let a = (Math.PI / 3) * i;
+                    let px = eyeX + eyeRadius * 0.2 + (eyeRadius * 0.4) * Math.cos(a);
+                    let py = eyeY + (eyeRadius * 0.4) * Math.sin(a);
+                    i === 0 ? bCtx.moveTo(px, py) : bCtx.lineTo(px, py);
+                }
+                bCtx.closePath();
+                bCtx.fill();
+            } else if (eyeType === 'angry_geo') {
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                bCtx.arc(eyeX + eyeRadius * 0.2, eyeY + eyeRadius * 0.1, eyeRadius * 0.5, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.fillStyle = bodyColor;
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX - eyeRadius * 1.3, eyeY - eyeRadius * 1.2);
+                bCtx.lineTo(eyeX + eyeRadius * 1.3, eyeY - eyeRadius * 0.2);
+                bCtx.lineTo(eyeX + eyeRadius * 1.3, eyeY - eyeRadius * 1.4);
+                bCtx.closePath();
+                bCtx.fill();
+                bCtx.strokeStyle = "black";
+                bCtx.lineWidth = 3;
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX - eyeRadius * 1.2, eyeY - eyeRadius * 0.9);
+                bCtx.lineTo(eyeX + eyeRadius * 1.2, eyeY - eyeRadius * 0.1);
+                bCtx.stroke();
+            } else if (eyeType === 'surprised_geo') {
+                bCtx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                    let a = (Math.PI / 4) * i;
+                    let px = eyeX + eyeRadius * Math.cos(a);
+                    let py = eyeY + eyeRadius * Math.sin(a);
+                    i === 0 ? bCtx.moveTo(px, py) : bCtx.lineTo(px, py);
+                }
+                bCtx.closePath();
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.fillRect(eyeX - eyeRadius * 0.3, eyeY - eyeRadius * 0.3, eyeRadius * 0.6, eyeRadius * 0.6);
+            } else if (eyeType === 'focused_geo') {
+                bCtx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius * 0.8, eyeRadius * 1.8, eyeRadius * 1.6);
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX - eyeRadius * 0.2, eyeY - eyeRadius * 0.5);
+                bCtx.lineTo(eyeX + eyeRadius * 0.6, eyeY);
+                bCtx.lineTo(eyeX - eyeRadius * 0.2, eyeY + eyeRadius * 0.5);
+                bCtx.closePath();
+                bCtx.fill();
+            } else if (eyeType === 'cyborg_geo') {
+                bCtx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius * 2, eyeRadius * 2);
+                bCtx.fillStyle = "black";
+                bCtx.fillRect(eyeX - eyeRadius * 0.6, eyeY - eyeRadius * 0.6, eyeRadius * 1.2, eyeRadius * 1.2);
+                bCtx.fillStyle = "#00ffff";
+                bCtx.fillRect(eyeX - eyeRadius * 0.2, eyeY - eyeRadius * 0.2, eyeRadius * 0.4, eyeRadius * 0.4);
+            } else if (eyeType === 'star') {
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    let a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    let pX = eyeX + Math.cos(a) * (eyeRadius * 0.7);
+                    let pY = eyeY + Math.sin(a) * (eyeRadius * 0.7);
+                    i === 0 ? bCtx.moveTo(pX, pY) : bCtx.lineTo(pX, pY);
+                }
+                bCtx.closePath();
+                bCtx.fill();
+            } else if (eyeType === 'dot') {
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius * 0.45, 0, Math.PI * 2);
+                bCtx.fill();
+            } else if (eyeType === 'winky') {
+                bCtx.strokeStyle = "black";
+                bCtx.lineWidth = 4;
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius * 0.75, Math.PI, 0);
+                bCtx.stroke();
+            } else if (eyeType === 'glasses') {
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                bCtx.beginPath();
+                bCtx.arc(eyeX + eyeRadius * 0.2, eyeY, eyeRadius * 0.5, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.strokeStyle = "black";
+                bCtx.lineWidth = 3;
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius * 1.1, 0, Math.PI * 2);
+                bCtx.stroke();
+                bCtx.beginPath();
+                bCtx.moveTo(eyeX - eyeRadius * 1.1, eyeY);
+                bCtx.lineTo(eyeX - eyeRadius * 1.8, eyeY - eyeRadius * 0.5);
+                bCtx.stroke();
+            } else {
+                bCtx.beginPath();
+                bCtx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.fillStyle = "black";
+                if (eyeType === 'slit') {
+                    bCtx.beginPath();
+                    bCtx.ellipse(eyeX + eyeRadius * 0.2, eyeY, eyeRadius * 0.2, eyeRadius * 0.8, 0, 0, Math.PI * 2);
+                    bCtx.fill();
+                } else if (eyeType === 'anime') {
+                    bCtx.beginPath();
+                    bCtx.ellipse(eyeX, eyeY, eyeRadius * 0.7, eyeRadius * 0.85, 0, 0, Math.PI * 2);
+                    bCtx.fill();
+                    bCtx.fillStyle = "white";
+                    bCtx.beginPath();
+                    bCtx.arc(eyeX - eyeRadius * 0.2, eyeY - eyeRadius * 0.3, eyeRadius * 0.25, 0, Math.PI * 2);
+                    bCtx.fill();
+                    bCtx.beginPath();
+                    bCtx.arc(eyeX + eyeRadius * 0.2, eyeY + eyeRadius * 0.3, eyeRadius * 0.1, 0, Math.PI * 2);
+                    bCtx.fill();
+                } else if (eyeType === 'sleepy') {
+                    bCtx.beginPath();
+                    bCtx.arc(eyeX + (eyeRadius * 0.2), eyeY + eyeRadius * 0.2, eyeRadius * 0.4, 0, Math.PI * 2);
+                    bCtx.fill();
+                    bCtx.fillStyle = bodyColor;
+                    bCtx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius * 2, eyeRadius * 1.1);
+                    bCtx.strokeStyle = "black";
+                    bCtx.lineWidth = 2;
+                    bCtx.beginPath();
+                    bCtx.moveTo(eyeX - eyeRadius, eyeY + eyeRadius * 0.1);
+                    bCtx.lineTo(eyeX + eyeRadius, eyeY + eyeRadius * 0.1);
+                    bCtx.stroke();
+                } else {
+                    bCtx.beginPath();
+                    bCtx.arc(eyeX + (eyeRadius * 0.2), eyeY, eyeRadius * 0.5, 0, Math.PI * 2);
+                    bCtx.fill();
+                }
+            }
+
+            const tailX = -bodyWidth + (bodyWidth * 0.1);
+            const tailBound = Math.ceil(tailSize * 1.8 + pad);
+
+            const tailCanvas = document.createElement('canvas');
+            tailCanvas.width = Math.ceil(tailBound * 2 * spriteResMultiplier);
+            tailCanvas.height = Math.ceil(tailBound * 2 * spriteResMultiplier);
+            const tCtx = tailCanvas.getContext('2d');
+            tCtx.scale(spriteResMultiplier, spriteResMultiplier);
+
+            const tcx = tailBound;
+            const tcy = tailBound;
+
+            if (isShiny && !isLowQuality) { tCtx.shadowBlur = 40;
+                tCtx.shadowColor = "gold"; }
+            tCtx.fillStyle = finColor;
+            tCtx.translate(tcx - tailX, tcy);
+            tCtx.beginPath();
+
+            if (tailType === 'triangle') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize, -(tailSize * tailAngle));
+                tCtx.lineTo(tailX - tailSize, (tailSize * tailAngle));
+            } else if (tailType === 'forked') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize, -(tailSize * tailAngle));
+                tCtx.lineTo(tailX - tailSize * 0.4, 0);
+                tCtx.lineTo(tailX - tailSize, (tailSize * tailAngle));
+            } else if (tailType === 'paddle') {
+                tCtx.roundRect(tailX - tailSize, -(tailSize * tailAngle) / 2, tailSize, tailSize * tailAngle, 10);
+            } else if (tailType === 'crescent') {
+                tCtx.arc(tailX - tailSize / 2, 0, tailSize, -Math.PI / 2, Math.PI / 2, true);
+                tCtx.arc(tailX - tailSize * 0.2, 0, tailSize * 0.8, Math.PI / 2, -Math.PI / 2, false);
+            } else if (tailType === 'spiky') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize, -tailSize * 0.8);
+                tCtx.lineTo(tailX - tailSize * 0.6, -tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize * 1.2, 0);
+                tCtx.lineTo(tailX - tailSize * 0.6, tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize, tailSize * 0.8);
+            } else if (tailType === 'double_fan') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize, -tailSize * 0.9);
+                tCtx.lineTo(tailX - tailSize * 0.7, -tailSize * 0.2);
+                tCtx.lineTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.7, tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize, tailSize * 0.9);
+            } else if (tailType === 'pin_tail') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.5, -tailSize * 0.4);
+                tCtx.lineTo(tailX - tailSize * 1.8, 0);
+                tCtx.lineTo(tailX - tailSize * 0.5, tailSize * 0.4);
+            } else if (tailType === 'crown') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize, -tailSize * 0.8);
+                tCtx.lineTo(tailX - tailSize * 0.6, -tailSize * 0.3);
+                tCtx.lineTo(tailX - tailSize * 1.2, 0);
+                tCtx.lineTo(tailX - tailSize * 0.6, tailSize * 0.3);
+                tCtx.lineTo(tailX - tailSize, tailSize * 0.8);
+            } else if (tailType === 'poly_fan') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.5, -tailSize * 0.5);
+                tCtx.lineTo(tailX - tailSize * 1.1, -tailSize * 0.95);
+                tCtx.lineTo(tailX - tailSize * 0.75, -tailSize * 0.3);
+                tCtx.lineTo(tailX - tailSize * 1.25, 0);
+                tCtx.lineTo(tailX - tailSize * 0.75, tailSize * 0.3);
+                tCtx.lineTo(tailX - tailSize * 1.1, tailSize * 0.95);
+                tCtx.lineTo(tailX - tailSize * 0.5, tailSize * 0.5);
+            } else if (tailType === 'crystal_shard') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.4, -tailSize * 0.7);
+                tCtx.lineTo(tailX - tailSize * 1.3, -tailSize * 0.5);
+                tCtx.lineTo(tailX - tailSize * 0.8, 0);
+                tCtx.lineTo(tailX - tailSize * 1.3, tailSize * 0.5);
+                tCtx.lineTo(tailX - tailSize * 0.4, tailSize * 0.7);
+            } else if (tailType === 'stepped_tail') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.3, -tailSize * 0.3);
+                tCtx.lineTo(tailX - tailSize * 0.3, -tailSize * 0.7);
+                tCtx.lineTo(tailX - tailSize * 0.7, -tailSize * 0.7);
+                tCtx.lineTo(tailX - tailSize * 0.7, -tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize * 1.2, -tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize * 1.2, tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize * 0.7, tailSize * 0.2);
+                tCtx.lineTo(tailX - tailSize * 0.7, tailSize * 0.7);
+                tCtx.lineTo(tailX - tailSize * 0.3, tailSize * 0.7);
+                tCtx.lineTo(tailX - tailSize * 0.3, tailSize * 0.3);
+            } else if (tailType === 'arrow_geo') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.6, -tailSize * 0.8);
+                tCtx.lineTo(tailX - tailSize * 0.8, -tailSize * 0.8);
+                tCtx.lineTo(tailX - tailSize * 0.4, 0);
+                tCtx.lineTo(tailX - tailSize * 1.4, 0);
+                tCtx.lineTo(tailX - tailSize * 0.4, 0);
+                tCtx.lineTo(tailX - tailSize * 0.8, tailSize * 0.8);
+                tCtx.lineTo(tailX - tailSize * 0.6, tailSize * 0.8);
+            } else if (tailType === 'diamond_tail') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 0.4, -tailSize * 0.4);
+                tCtx.lineTo(tailX - tailSize * 0.8, 0);
+                tCtx.lineTo(tailX - tailSize * 0.4, tailSize * 0.4);
+                tCtx.moveTo(tailX - tailSize * 0.7, 0);
+                tCtx.lineTo(tailX - tailSize * 1.1, -tailSize * 0.6);
+                tCtx.lineTo(tailX - tailSize * 1.5, 0);
+                tCtx.lineTo(tailX - tailSize * 1.1, tailSize * 0.6);
+            } else if (tailType === 'tri_blade') {
+                tCtx.moveTo(tailX, 0);
+                tCtx.lineTo(tailX - tailSize * 1.1, -tailSize * 0.85);
+                tCtx.lineTo(tailX - tailSize * 0.6, -tailSize * 0.1);
+                tCtx.lineTo(tailX - tailSize * 1.3, 0);
+                tCtx.lineTo(tailX - tailSize * 0.6, tailSize * 0.1);
+                tCtx.lineTo(tailX - tailSize * 1.1, tailSize * 0.85);
+            }
+            tCtx.closePath();
+            tCtx.fill();
+
+            const spriteData = { bodyCanvas, tailCanvas, fcx, fcy, tcx, tcy, tailX, bodyWidth, bodyHeight };
+            fishSpriteCache.set(cacheKey, spriteData);
+            return spriteData;
+        }
+
+        // ─── UPDATED drawFishToCtx with tilt support ──────────────────────────
+
+        function drawFishToCtx(ctx, seedString, cx, cy, scale, wigglePhase = 0, facingRight = true, isLowQuality = false,
+            tiltAngle = 0) {
+            const sprite = getFishSprite(seedString, isLowQuality);
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(tiltAngle);
+            ctx.rotate(Math.sin(wigglePhase) * 0.035);
+            ctx.scale(facingRight ? scale : -scale, scale);
+
+            ctx.save();
+            ctx.translate(sprite.tailX, 0);
+            ctx.rotate(Math.sin(wigglePhase * 1.2) * 0.18);
+            ctx.drawImage(sprite.tailCanvas, -sprite.tcx, -sprite.tcy, sprite.tcx * 2, sprite.tcy * 2);
+            ctx.restore();
+
+            ctx.drawImage(sprite.bodyCanvas, -sprite.fcx, -sprite.fcy, sprite.fcx * 2, sprite.fcy * 2);
+            ctx.restore();
+        }
+
+        // ─── MAIN CANVAS ─────────────────────────────────────────────────────────
+
         const canvas = document.getElementById('fishCanvas');
         const ctx = canvas.getContext('2d');
         const titleEl = document.getElementById('title');
+        const keepBtn = document.getElementById('keepBtn');
+        const tankCanvasEl = document.getElementById('tankCanvas');
+        const pelletCounterEl = document.getElementById('pelletCounter');
+
+        // ─── PELLET SYSTEM ───────────────────────────────────────────────────────
+
+        let pellets = [];
+        const MAX_PELLETS = 20;
+        const PELLET_GRAVITY = 0.000001;
+        const PELLET_DAMPING = 0.9999;
+        const PELLET_MAX_SPEED = 0.00025;
+        const PELLET_SLOW_START = 0.89;
+        const PELLET_SLOW_END = 0.97;
+
+        function spawnPellet(nx, ny) {
+            if (pellets.length >= MAX_PELLETS) return false;
+            const pellet = {
+                x: Math.max(0.02, Math.min(0.98, nx)),
+                y: Math.max(0.02, Math.min(0.98, ny)),
+                vy: 0,
+                active: true,
+                targetedBy: null,
+                radius: 0.018,
+                eaten: false,
+                sprinkles: [
+                    { dx: -0.006, dy: -0.004, rot: 0.2 },
+                    { dx: 0.008, dy: 0.002, rot: -0.35 },
+                    { dx: -0.002, dy: 0.010, rot: 0.55 }
+                ]
+            };
+            pellets.push(pellet);
+            updatePelletCounter();
+            assignFishToPellet(pellet);
+            return true;
+        }
+
+        function updatePelletCounter() {
+            const active = pellets.filter(p => p.active && !p.eaten).length;
+            if (active > 0) {
+                pelletCounterEl.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
+                pelletCounterEl.classList.add('visible');
+            } else {
+                pelletCounterEl.classList.remove('visible');
+            }
+            const pipCounter = document.getElementById('pipPelletCounter');
+            if (pipCounter) {
+                pipCounter.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
+                pipCounter.style.display = active > 0 ? 'block' : 'none';
+            }
+        }
+
+        function removePellet(pellet) {
+            pellet.active = false;
+            pellet.eaten = true;
+            if (pellet.targetedBy) {
+                const fish = pellet.targetedBy;
+                fish.targetPellet = null;
+                fish.targetTilt = 0;
+                fish.nvx *= 0.5;
+                fish.nvy *= 0.5;
+                pellet.targetedBy = null;
+            }
+            updatePelletCounter();
+        }
+
+        function assignFishToPellet(pellet) {
+            if (!pellet.active || pellet.eaten) return false;
+            if (pellet.targetedBy) return false;
+            let bestFish = null;
+            let bestDist = Infinity;
+            for (const fish of tankFish) {
+                if (fish.targetPellet) continue;
+                const dx = fish.nx - pellet.x;
+                const dy = fish.ny - pellet.y;
+                const dist = dx * dx + dy * dy;
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestFish = fish;
+                }
+            }
+            if (bestFish) {
+                bestFish.targetPellet = pellet;
+                pellet.targetedBy = bestFish;
+                return true;
+            }
+            return false;
+        }
+
+        function findPelletForFish(fish) {
+            let best = null;
+            let bestDist = Infinity;
+            for (const p of pellets) {
+                if (!p.active || p.eaten) continue;
+                if (p.targetedBy) continue;
+                const dx = p.x - fish.nx;
+                const dy = p.y - fish.ny;
+                const dist = dx * dx + dy * dy;
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = p;
+                }
+            }
+            if (best) {
+                fish.targetPellet = best;
+                best.targetedBy = fish;
+                return true;
+            }
+            return false;
+        }
+
+        // ─── FISH TARGETING LOGIC with ellipse collision ──────────────────────
+
+        function updateFishTargeting(renderScale, canvasW, canvasH) {
+            // Clean up stale pellet references
+            for (const fish of tankFish) {
+                if (fish.targetPellet) {
+                    const p = fish.targetPellet;
+                    if (!p.active || p.eaten) {
+                        fish.targetPellet = null;
+                        fish.targetTilt = 0;
+                        continue;
+                    }
+                }
+            }
+
+            for (const fish of tankFish) {
+                if (fish.targetPellet) {
+                    const pellet = fish.targetPellet;
+                    if (!pellet.active || pellet.eaten) {
+                        fish.targetPellet = null;
+                        fish.targetTilt = 0;
+                        continue;
+                    }
+
+                    const dx = pellet.x - fish.nx;
+                    const dy = pellet.y - fish.ny;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (Math.abs(dx) > 0.003) {
+                        const newDir = dx > 0 ? 1 : -1;
+                        if (newDir !== fish.dir) {
+                            fish.dir = newDir;
+                            fish.lastDirectionChange = performance.now();
+                        }
+                    }
+
+                    const speed = fish.speed;
+                    if (dist > 0.001) {
+                        const moveX = (dx / dist) * speed;
+                        const moveY = (dy / dist) * speed;
+                        fish.nx += moveX;
+                        fish.ny += moveY;
+                        const padX = 0.06;
+                        const padY = 0.10;
+                        fish.nx = Math.max(padX, Math.min(1 - padX, fish.nx));
+                        fish.ny = Math.max(padY, Math.min(1 - padY, fish.ny));
+                    }
+
+                    const angleToPellet = Math.atan2(dy, dx);
+                    let tiltRaw;
+                    if (fish.dir > 0) {
+                        tiltRaw = angleToPellet;
+                    } else {
+                        tiltRaw = -angleToPellet;
+                    }
+                    const maxTilt = 0.55;
+                    tiltRaw = Math.max(-maxTilt, Math.min(maxTilt, tiltRaw));
+                    fish.targetTilt = tiltRaw;
+                    fish.tiltAngle += (fish.targetTilt - fish.tiltAngle) * 0.025;
+
+                    // ─── COLLISION: ellipse shape matching visual body ──────────
+                    // Visual half-dimensions in normalized space.
+                    // Use device-pixel dimensions so that renderScale (in device pixels)
+                    // and canvasW/canvasH are in the same unit.
+                    const visHalfW = (fish.bodyWidth * renderScale) / canvasW;
+                    const visHalfH = (fish.bodyHeight * renderScale) / canvasH;
+
+                    // Nose position (front of the fish, in direction of travel)
+                    const noseX = fish.nx + fish.dir * visHalfW * 1.1;
+                    const noseY = fish.ny;
+
+                    // Mouth/head ellipse: smaller than full body, at the front
+                    const mouthRX = visHalfW * 0.55;
+                    const mouthRY = visHalfH * 0.50;
+
+                    // Check if pellet is inside the mouth ellipse
+                    const dxMouth = pellet.x - noseX;
+                    const dyMouth = pellet.y - noseY;
+                    const mouthDist = (dxMouth * dxMouth) / (mouthRX * mouthRX) +
+                        (dyMouth * dyMouth) / (mouthRY * mouthRY);
+
+                    if (mouthDist <= 1.0) {
+                        removePellet(pellet);
+                        findPelletForFish(fish);
+                        continue;
+                    }
+
+                    // Also check full body ellipse (for larger collisions)
+                    const bodyRX = visHalfW * 0.85;
+                    const bodyRY = visHalfH * 0.85;
+                    const dxBody = pellet.x - fish.nx;
+                    const dyBody = pellet.y - fish.ny;
+                    const bodyDist = (dxBody * dxBody) / (bodyRX * bodyRX) +
+                        (dyBody * dyBody) / (bodyRY * bodyRY);
+
+                    // Only check body if pellet is in the front half (direction of travel)
+                    const frontCheck = fish.dir > 0 ?
+                        (pellet.x > fish.nx - visHalfW * 0.2) :
+                        (pellet.x < fish.nx + visHalfW * 0.2);
+
+                    if (bodyDist <= 1.0 && frontCheck) {
+                        removePellet(pellet);
+                        findPelletForFish(fish);
+                    }
+                } else {
+                    // No target: smoothly ease back to neutral
+                    fish.targetTilt = 0;
+                    fish.tiltAngle += (0 - fish.tiltAngle) * 0.02;
+
+                    fish.nvx *= 0.97;
+                    fish.nvy *= 0.97;
+                    if (Math.abs(fish.nvx) < 0.000001) fish.nvx = 0;
+                    if (Math.abs(fish.nvy) < 0.000001) fish.nvy = 0;
+
+                    let found = false;
+                    for (const p of pellets) {
+                        if (p.active && !p.eaten && !p.targetedBy) {
+                            if (assignFishToPellet(p)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        // No pellets available — natural swimming will take over
+                    }
+                }
+            }
+
+            for (const p of pellets) {
+                if (!p.active || p.eaten) {
+                    if (p.targetedBy) {
+                        p.targetedBy.targetPellet = null;
+                        p.targetedBy.targetTilt = 0;
+                        p.targetedBy = null;
+                    }
+                }
+            }
+        }
+
+        // ─── PELLET PHYSICS ─────────────────────────────────────────────────────
+
+        function updatePellets() {
+            for (const p of pellets) {
+                if (!p.active || p.eaten) continue;
+
+                let grav = PELLET_GRAVITY;
+
+                if (p.y > PELLET_SLOW_START) {
+                    const progress = Math.min(1, (p.y - PELLET_SLOW_START) / (PELLET_SLOW_END - PELLET_SLOW_START));
+                    const eased = progress * progress * (3 - 2 * progress);
+                    const factor = 1 - eased * 0.35;
+                    grav *= factor;
+                }
+
+                p.vy += grav;
+                p.vy *= PELLET_DAMPING;
+                if (p.vy > PELLET_MAX_SPEED) p.vy = PELLET_MAX_SPEED;
+                if (p.vy < -PELLET_MAX_SPEED) p.vy = -PELLET_MAX_SPEED;
+
+                p.y += p.vy;
+
+                if (p.y >= 0.98) {
+                    removePellet(p);
+                    continue;
+                }
+                p.x = Math.max(0.02, Math.min(0.98, p.x));
+            }
+            pellets = pellets.filter(p => p.active && !p.eaten);
+            updatePelletCounter();
+        }
+
+        // ─── RENDER PELLETS — flaky creamy brown sprinkles ─────────────────────
+
+        function drawPellets(tCtx, canvasW, canvasH, ratio) {
+            const baseSize = Math.max(3, Math.floor(5 * ratio));
+
+            for (const p of pellets) {
+                if (!p.active || p.eaten) continue;
+                const cx = p.x * canvasW;
+                const cy = p.y * canvasH;
+
+                for (const sp of p.sprinkles) {
+                    const sx = cx + sp.dx * canvasW * 0.9;
+                    const sy = cy + sp.dy * canvasH * 0.9;
+                    const rot = sp.rot + (p.x * 1.7 + p.y * 3.1);
+
+                    tCtx.save();
+                    tCtx.translate(sx, sy);
+                    tCtx.rotate(rot);
+
+                    const w = baseSize * 1.3;
+                    const h = baseSize * 0.55;
+
+                    const baseLight = 0.72 + 0.12 * Math.sin(p.x * 7.3 + p.y * 11.7 + sp.dx * 20);
+                    const r = Math.floor(190 + 35 * (1 - baseLight));
+                    const g = Math.floor(160 + 30 * (1 - baseLight));
+                    const b = Math.floor(110 + 25 * (1 - baseLight));
+
+                    const grad = tCtx.createRadialGradient(0, 0, 0, 0, 0, w * 0.6);
+                    grad.addColorStop(0, `rgb(${Math.min(255,r+30)},${Math.min(255,g+25)},${Math.min(255,b+15)})`);
+                    grad.addColorStop(0.6, `rgb(${r},${g},${b})`);
+                    grad.addColorStop(1, `rgb(${Math.max(0,r-40)},${Math.max(0,g-35)},${Math.max(0,b-25)})`);
+
+                    tCtx.fillStyle = grad;
+                    const rx = w / 2,
+                        ry = h / 2;
+                    tCtx.beginPath();
+                    tCtx.moveTo(-rx, -ry + ry * 0.3);
+                    tCtx.quadraticCurveTo(-rx, -ry, -rx + ry * 0.3, -ry);
+                    tCtx.lineTo(rx - ry * 0.3, -ry);
+                    tCtx.quadraticCurveTo(rx, -ry, rx, -ry + ry * 0.3);
+                    tCtx.lineTo(rx, ry - ry * 0.3);
+                    tCtx.quadraticCurveTo(rx, ry, rx - ry * 0.3, ry);
+                    tCtx.lineTo(-rx + ry * 0.3, ry);
+                    tCtx.quadraticCurveTo(-rx, ry, -rx, ry - ry * 0.3);
+                    tCtx.closePath();
+                    tCtx.fill();
+
+                    tCtx.fillStyle = `rgba(255, 240, 210, ${0.3 + 0.15 * Math.sin(p.x*5.2 + p.y*7.1 + sp.dx*12)})`;
+                    tCtx.beginPath();
+                    tCtx.ellipse(0, -h * 0.2, w * 0.25, h * 0.2, 0, 0, Math.PI * 2);
+                    tCtx.fill();
+
+                    tCtx.strokeStyle = `rgba(130, 90, 55, 0.2)`;
+                    tCtx.lineWidth = 0.6;
+                    tCtx.beginPath();
+                    tCtx.roundRect(-w / 2, -h / 2, w, h, h * 0.4);
+                    tCtx.stroke();
+
+                    tCtx.restore();
+                }
+            }
+        }
+
+        // ─── CANVAS CLICK HANDLING ─────────────────────────────────────────────
+
+        function setupCanvasClickHandler(canvasEl, isPopup = false) {
+            if (!canvasEl) return;
+            canvasEl.addEventListener('click', (e) => {
+                if (pellets.length >= MAX_PELLETS) return;
+                const rect = canvasEl.getBoundingClientRect();
+                const scaleX = canvasEl.width / (rect.width || 1);
+                const scaleY = canvasEl.height / (rect.height || 1);
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                const normX = x / canvasEl.width;
+                const normY = y / canvasEl.height;
+                const clampedX = Math.max(0.04, Math.min(0.96, normX));
+                const clampedY = Math.max(0.06, Math.min(0.94, normY));
+                spawnPellet(clampedX, clampedY);
+            });
+            canvasEl.style.cursor = 'crosshair';
+        }
+
+        // ─── RESIZE & DRAW ──────────────────────────────────────────────────────
 
         function resizeAndDraw() {
             const ratio = window.devicePixelRatio || 1;
-            
             canvas.style.width = window.innerWidth + 'px';
             canvas.style.height = window.innerHeight + 'px';
-            
             canvas.width = window.innerWidth * ratio;
             canvas.height = window.innerHeight * ratio;
-            
-            drawFish(ratio);
-        }
 
-        function drawFish(pixelRatio) {
-            const dailySeedString = deviceId + "-" + getFishDayString();
-            const rand = seededRandom(stringToSeed(dailySeedString));
+            const seedString = getCurrentDailySeed();
+            const rand = seededRandom(stringToSeed(seedString));
 
             function randomRange(min, max) { return min + rand() * (max - min); }
+
             function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
 
             ctx.resetTransform();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Determine if Shiny (1 in 1,000,000,000)
-            const isShiny = rand() < 0.000000001; 
-            
+            const isShiny = rand() < 0.000000001;
             if (isShiny) {
                 titleEl.innerText = "You caught a shiny fih!";
                 titleEl.style.color = "#FFD700";
@@ -143,323 +1842,1394 @@
                 titleEl.style.textShadow = "4px 4px 0px #333333";
             }
 
-            // Expanded Variations
-            const bodyType = pick(['ellipse', 'box', 'diamond', 'pill', 'hexagon', 'trapezoid', 'teardrop', 'triangle']);
-            const tailType = pick(['triangle', 'forked', 'paddle', 'heart', 'crescent', 'spiky']);
-            const finType = pick(['spiky', 'smooth', 'tiny', 'ribbon']);
-            const patternType = pick(['scales', 'stripes', 'spots', 'grid', 'x_cross', 'halftone', 'sparkles', 'waves', 'chevrons', 'none']);
-            const eyeType = pick(['round', 'slit', 'square', 'anime', 'sleepy', 'star', 'dot']);
+            const bodyWidth = randomRange(12, 220);
+            const bodyHeight = randomRange(8, 140);
+            const tailSize = randomRange(12, 95);
+            const finType = pick(['spiky', 'poly_wing', 'crystal_fin', 'stepped_fin', 'shard_fin', 'trapezoid', 'sail_geo',
+                'blade_fin', 'tiny'
+            ]);
 
-            // Dimensional Math
-            const bodyWidth = randomRange(100, 250);
-            const bodyHeight = randomRange(60, 160);
-            const tailSize = randomRange(60, 140);
-            const tailAngle = randomRange(0.3, 0.9);
-
-            // Calculate precise tight bounding box for THIS fish to maximize screen usage
-            const maxLeft = bodyWidth * 0.9 + tailSize * 1.25;
+            const maxLeft = bodyWidth * 0.9 + tailSize * 1.5;
             const maxRight = bodyWidth * 1.15;
-            const maxTop = bodyHeight + (finType === 'ribbon' ? 170 : 90);
-            const maxBottom = bodyHeight + (finType === 'ribbon' ? 170 : 90);
+            const finBottomExt = (finType === 'sail_geo' || finType === 'poly_wing' ? 130 :
+                (finType === 'spiky' || finType === 'stepped_fin' ? 75 : 90));
+            const maxBottom = bodyHeight + finBottomExt;
 
             const neededWidth = Math.max(maxLeft, maxRight) * 2;
-            const neededHeight = Math.max(maxTop, maxBottom) * 2;
+            const neededHeight = Math.max(maxBottom, maxBottom) * 2;
 
-            // Scale up to fill ~90% of whichever screen dimension touches the edge first
             const scaleX = window.innerWidth / neededWidth;
             const scaleY = window.innerHeight / neededHeight;
-            const baseScale = Math.min(scaleX, scaleY) * 0.90; 
-            
-            const finalScale = pixelRatio * baseScale;
-            // Center in physical canvas with a slight downward offset for title clearance
-            ctx.translate(canvas.width / 2, (canvas.height / 2) + (20 * pixelRatio * baseScale));
-            ctx.scale(finalScale, finalScale);
-            
-            const cx = 0;
-            const cy = 0;
+            const baseScale = Math.min(scaleX, scaleY) * 0.82;
+            const finalScale = ratio * baseScale;
 
-            // Color Math
-            const hueBase = isShiny ? 45 : randomRange(0, 360);
-            const saturation = isShiny ? '100%' : '80%';
-            
-            const bodyColor = `hsl(${hueBase}, ${saturation}, ${isShiny ? '55%' : '50%'})`;
-            const finColor = `hsl(${(hueBase + (isShiny ? 10 : pick([-40, 40, 180]))) % 360}, 90%, 60%)`; 
-            const scaleColor = `hsla(${(hueBase + 20) % 360}, ${isShiny ? '100%' : '80%'}, ${isShiny ? '70%' : '30%'}, 0.5)`;
+            const cx = canvas.width / 2;
+            const cy = (canvas.height / 2) - (20 * ratio * baseScale);
 
-            if (isShiny) {
-                ctx.shadowBlur = 40;
-                ctx.shadowColor = "gold";
-            }
+            drawFishToCtx(ctx, seedString, cx, cy, finalScale, 0, true, false, 0);
+            updateKeepButtonState();
+        }
 
-            // Body Path Tracing
-            function traceBody() {
-                ctx.beginPath();
-                if (bodyType === 'ellipse') {
-                    ctx.ellipse(cx, cy, bodyWidth, bodyHeight, 0, 0, Math.PI * 2);
-                } else if (bodyType === 'box') {
-                    ctx.roundRect(cx - bodyWidth, cy - bodyHeight, bodyWidth * 2, bodyHeight * 2, 20);
-                } else if (bodyType === 'pill') {
-                    ctx.roundRect(cx - bodyWidth, cy - bodyHeight, bodyWidth * 2, bodyHeight * 2, bodyHeight);
-                } else if (bodyType === 'diamond') {
-                    ctx.moveTo(cx - bodyWidth, cy); ctx.lineTo(cx, cy - bodyHeight);
-                    ctx.lineTo(cx + bodyWidth, cy); ctx.lineTo(cx, cy + bodyHeight);
-                } else if (bodyType === 'hexagon') {
-                    for(let i=0; i<6; i++) {
-                        let angle = (Math.PI / 3) * i;
-                        let px = cx + bodyWidth * Math.cos(angle);
-                        let py = cy + bodyHeight * Math.sin(angle);
-                        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-                    }
-                } else if (bodyType === 'trapezoid') {
-                    ctx.moveTo(cx - bodyWidth, cy + bodyHeight);
-                    ctx.lineTo(cx + bodyWidth, cy + bodyHeight);
-                    ctx.lineTo(cx + bodyWidth * 0.6, cy - bodyHeight);
-                    ctx.lineTo(cx - bodyWidth * 0.6, cy - bodyHeight);
-                } else if (bodyType === 'teardrop') {
-                    ctx.moveTo(cx - bodyWidth, cy);
-                    ctx.bezierCurveTo(cx - bodyWidth, cy - bodyHeight, cx + bodyWidth, cy - bodyHeight, cx + bodyWidth, cy);
-                    ctx.bezierCurveTo(cx + bodyWidth, cy + bodyHeight, cx - bodyWidth, cy + bodyHeight, cx - bodyWidth, cy);
-                } else if (bodyType === 'triangle') {
-                    ctx.moveTo(cx - bodyWidth, cy + bodyHeight);
-                    ctx.lineTo(cx + bodyWidth, cy);
-                    ctx.lineTo(cx - bodyWidth, cy - bodyHeight);
-                }
-                ctx.closePath();
-            }
-
-            // 1. Draw Tail
-            ctx.fillStyle = finColor;
-            ctx.beginPath();
-            const tailX = cx - bodyWidth + (bodyWidth * 0.1); 
-            
-            if (tailType === 'triangle') {
-                ctx.moveTo(tailX, cy);
-                ctx.lineTo(tailX - tailSize, cy - (tailSize * tailAngle));
-                ctx.lineTo(tailX - tailSize, cy + (tailSize * tailAngle));
-            } else if (tailType === 'forked') {
-                ctx.moveTo(tailX, cy);
-                ctx.lineTo(tailX - tailSize, cy - (tailSize * tailAngle));
-                ctx.lineTo(tailX - tailSize * 0.4, cy);
-                ctx.lineTo(tailX - tailSize, cy + (tailSize * tailAngle));
-            } else if (tailType === 'paddle') {
-                ctx.roundRect(tailX - tailSize, cy - (tailSize * tailAngle)/2, tailSize, tailSize * tailAngle, 10);
-            } else if (tailType === 'heart') {
-                ctx.moveTo(tailX, cy);
-                ctx.bezierCurveTo(tailX - tailSize/2, cy - tailSize, tailX - tailSize, cy - tailSize/2, tailX - tailSize, cy);
-                ctx.bezierCurveTo(tailX - tailSize, cy + tailSize/2, tailX - tailSize/2, cy + tailSize, tailX, cy);
-            } else if (tailType === 'crescent') {
-                ctx.arc(tailX - tailSize/2, cy, tailSize, -Math.PI/2, Math.PI/2, true);
-                ctx.arc(tailX - tailSize*0.2, cy, tailSize*0.8, Math.PI/2, -Math.PI/2, false);
-            } else if (tailType === 'spiky') {
-                ctx.moveTo(tailX, cy);
-                ctx.lineTo(tailX - tailSize, cy - tailSize*0.8);
-                ctx.lineTo(tailX - tailSize*0.6, cy - tailSize*0.2);
-                ctx.lineTo(tailX - tailSize*1.2, cy);
-                ctx.lineTo(tailX - tailSize*0.6, cy + tailSize*0.2);
-                ctx.lineTo(tailX - tailSize, cy + tailSize*0.8);
-            }
-            ctx.closePath();
-            ctx.fill();
-
-            // Fin Drawing Helper
-            function drawFin(isTop) {
-                const dir = isTop ? -1 : 1;
-                ctx.beginPath();
-                if (finType === 'smooth') {
-                    ctx.moveTo(cx - bodyWidth*0.3, cy + (bodyHeight*0.8)*dir);
-                    ctx.quadraticCurveTo(cx, cy + (bodyHeight*2)*dir, cx + bodyWidth*0.5, cy + (bodyHeight*0.8)*dir);
-                } else if (finType === 'spiky') {
-                    ctx.moveTo(cx - 30, cy + bodyHeight * dir);
-                    ctx.lineTo(cx, cy + (bodyHeight + randomRange(40, 80)) * dir);
-                    ctx.lineTo(cx + 20, cy + bodyHeight * dir);
-                    ctx.lineTo(cx + 40, cy + (bodyHeight + randomRange(30, 60)) * dir);
-                    ctx.lineTo(cx + 60, cy + bodyHeight * dir);
-                } else if (finType === 'tiny') {
-                    ctx.arc(cx, cy + bodyHeight * dir, 25, 0, Math.PI, isTop);
-                } else if (finType === 'ribbon') {
-                    ctx.moveTo(cx, cy + bodyHeight * dir);
-                    ctx.bezierCurveTo(cx - 60, cy + (bodyHeight+100)*dir, cx + 80, cy + (bodyHeight+120)*dir, cx - 40, cy + (bodyHeight+160)*dir);
-                    ctx.lineTo(cx - 10, cy + bodyHeight * dir);
-                }
-                ctx.fill();
-            }
-
-            // 2 & 3. Draw Fins
-            drawFin(true);  
-            drawFin(false); 
-
-            // 4. Draw Main Body
-            ctx.save();
-            traceBody();
-            ctx.fillStyle = bodyColor;
-            ctx.fill();
-            
-            // Mask textures inside body
-            ctx.clip(); 
-            ctx.shadowBlur = 0; 
-
-            // Draw Patterns
-            ctx.strokeStyle = scaleColor;
-            ctx.fillStyle = scaleColor;
-            const patternScale = randomRange(18, 32);
-
-            if (patternType === 'scales') {
-                ctx.lineWidth = randomRange(2, 5);
-                for (let x = cx + bodyWidth; x > cx - bodyWidth; x -= patternScale * 0.8) {
-                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 1.2) {
-                        let yOffset = (Math.floor(x / patternScale) % 2 === 0) ? (patternScale * 0.6) : 0;
-                        ctx.beginPath();
-                        ctx.arc(x, y + yOffset, patternScale, -Math.PI / 2, Math.PI / 2);
-                        ctx.stroke();
-                    }
-                }
-            } else if (patternType === 'stripes') {
-                ctx.lineWidth = randomRange(8, 20);
-                for (let x = cx - bodyWidth + 10; x < cx + bodyWidth; x += patternScale * 1.5) {
-                    ctx.beginPath(); ctx.moveTo(x, cy - bodyHeight); ctx.lineTo(x, cy + bodyHeight); ctx.stroke();
-                }
-            } else if (patternType === 'grid') {
-                ctx.lineWidth = randomRange(3, 6);
-                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale) {
-                    ctx.beginPath(); ctx.moveTo(x, cy - bodyHeight); ctx.lineTo(x, cy + bodyHeight); ctx.stroke();
-                }
-                for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
-                    ctx.beginPath(); ctx.moveTo(cx - bodyWidth, y); ctx.lineTo(cx + bodyWidth, y); ctx.stroke();
-                }
-            } else if (patternType === 'spots') {
-                const numSpots = Math.floor(randomRange(15, 40));
-                for(let i = 0; i < numSpots; i++) {
-                    ctx.beginPath();
-                    ctx.arc(cx + randomRange(-bodyWidth, bodyWidth), cy + randomRange(-bodyHeight, bodyHeight), randomRange(5, 25), 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            } else if (patternType === 'x_cross') {
-                ctx.lineWidth = randomRange(2, 4);
-                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale) {
-                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
-                        ctx.beginPath();
-                        ctx.moveTo(x - patternScale*0.3, y - patternScale*0.3);
-                        ctx.lineTo(x + patternScale*0.3, y + patternScale*0.3);
-                        ctx.moveTo(x + patternScale*0.3, y - patternScale*0.3);
-                        ctx.lineTo(x - patternScale*0.3, y + patternScale*0.3);
-                        ctx.stroke();
-                    }
-                }
-            } else if (patternType === 'halftone') {
-                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale * 0.9) {
-                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 0.9) {
-                        let normX = (x - (cx - bodyWidth)) / (bodyWidth * 2); 
-                        let dotRadius = Math.max(1.5, (patternScale * 0.45) * Math.sin(normX * Math.PI));
-                        ctx.beginPath();
-                        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            } else if (patternType === 'sparkles') {
-                const numSparkles = Math.floor(randomRange(25, 55));
-                for (let i = 0; i < numSparkles; i++) {
-                    let sx = cx + randomRange(-bodyWidth, bodyWidth);
-                    let sy = cy + randomRange(-bodyHeight, bodyHeight);
-                    let size = randomRange(4, 12);
-                    ctx.beginPath();
-                    ctx.moveTo(sx, sy - size); ctx.lineTo(sx + size*0.25, sy - size*0.25);
-                    ctx.lineTo(sx + size, sy); ctx.lineTo(sx + size*0.25, sy + size*0.25);
-                    ctx.lineTo(sx, sy + size); ctx.lineTo(sx - size*0.25, sy + size*0.25);
-                    ctx.lineTo(sx - size, sy); ctx.lineTo(sx - size*0.25, sy - size*0.25);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-            } else if (patternType === 'waves') {
-                ctx.lineWidth = randomRange(3, 5);
-                for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale) {
-                    ctx.beginPath();
-                    for (let x = cx - bodyWidth; x <= cx + bodyWidth; x += 6) {
-                        let waveY = y + Math.sin((x / patternScale) * Math.PI) * (patternScale * 0.3);
-                        if (x === cx - bodyWidth) ctx.moveTo(x, waveY);
-                        else ctx.lineTo(x, waveY);
-                    }
-                    ctx.stroke();
-                }
-            } else if (patternType === 'chevrons') {
-                ctx.lineWidth = randomRange(3, 5);
-                for (let x = cx - bodyWidth; x < cx + bodyWidth; x += patternScale * 1.2) {
-                    for (let y = cy - bodyHeight; y < cy + bodyHeight; y += patternScale * 1.2) {
-                        ctx.beginPath();
-                        ctx.moveTo(x - patternScale*0.4, y - patternScale*0.4);
-                        ctx.lineTo(x, y);
-                        ctx.lineTo(x - patternScale*0.4, y + patternScale*0.4);
-                        ctx.stroke();
-                    }
-                }
-            }
-            
-            ctx.restore(); // Remove clipping mask
-
-            // Global sparkles for shiny fish
-            if (isShiny) {
-                ctx.fillStyle = "white";
-                for(let i = 0; i < 15; i++) {
-                    let sx = cx + randomRange(-bodyWidth, bodyWidth);
-                    let sy = cy + randomRange(-bodyHeight, bodyHeight);
-                    ctx.beginPath();
-                    ctx.moveTo(sx, sy - 10); ctx.lineTo(sx + 3, sy - 3);
-                    ctx.lineTo(sx + 10, sy); ctx.lineTo(sx + 3, sy + 3);
-                    ctx.lineTo(sx, sy + 10); ctx.lineTo(sx - 3, sy + 3);
-                    ctx.lineTo(sx - 10, sy); ctx.lineTo(sx - 3, sy - 3);
-                    ctx.fill();
-                }
-            }
-
-            // 5. Draw Eye
-            const eyeX = cx + bodyWidth * (bodyType === 'diamond' || bodyType === 'triangle' ? 0.2 : 0.5);
-            const eyeY = cy - bodyHeight * 0.2;
-            const eyeRadius = randomRange(12, 28);
-            
-            ctx.fillStyle = "white";
-            
-            if (eyeType === 'square') {
-                ctx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius * 2, eyeRadius * 2);
-                ctx.fillStyle = "black";
-                ctx.fillRect(eyeX, eyeY - eyeRadius / 2, eyeRadius, eyeRadius);
-            } else if (eyeType === 'star') {
-                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "black";
-                ctx.beginPath();
-                for(let i=0; i<5; i++) {
-                    let a = (Math.PI * 2 * i) / 5 - Math.PI/2;
-                    let pX = eyeX + Math.cos(a) * (eyeRadius*0.7);
-                    let pY = eyeY + Math.sin(a) * (eyeRadius*0.7);
-                    i === 0 ? ctx.moveTo(pX, pY) : ctx.lineTo(pX, pY);
-                }
-                ctx.closePath(); ctx.fill();
-            } else if (eyeType === 'dot') {
-                ctx.fillStyle = "black";
-                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius*0.4, 0, Math.PI*2); ctx.fill();
+        function updateKeepButtonState() {
+            const currentSeed = getCurrentDailySeed();
+            const saved = getCurrentFish();
+            if (saved.includes(currentSeed)) {
+                keepBtn.innerText = "IN TANK 🐟";
+                keepBtn.disabled = true;
             } else {
-                ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = "black";
-                if (eyeType === 'slit') {
-                    ctx.beginPath(); ctx.ellipse(eyeX + eyeRadius * 0.2, eyeY, eyeRadius * 0.2, eyeRadius * 0.8, 0, 0, Math.PI * 2); ctx.fill();
-                } else if (eyeType === 'anime') {
-                    ctx.beginPath(); ctx.ellipse(eyeX, eyeY, eyeRadius * 0.7, eyeRadius * 0.85, 0, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = "white";
-                    ctx.beginPath(); ctx.arc(eyeX - eyeRadius*0.2, eyeY - eyeRadius*0.3, eyeRadius*0.25, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(eyeX + eyeRadius*0.2, eyeY + eyeRadius*0.3, eyeRadius*0.1, 0, Math.PI*2); ctx.fill();
-                } else if (eyeType === 'sleepy') {
-                    ctx.beginPath(); ctx.arc(eyeX + (eyeRadius * 0.2), eyeY + eyeRadius*0.2, eyeRadius * 0.4, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = bodyColor;
-                    ctx.fillRect(eyeX - eyeRadius, eyeY - eyeRadius, eyeRadius*2, eyeRadius*1.1);
-                    ctx.strokeStyle = "black"; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(eyeX - eyeRadius, eyeY + eyeRadius*0.1); ctx.lineTo(eyeX + eyeRadius, eyeY + eyeRadius*0.1); ctx.stroke();
+                keepBtn.innerText = "KEEP 🐟";
+                keepBtn.disabled = false;
+            }
+        }
+
+        keepBtn.addEventListener('click', () => {
+            const currentSeed = getCurrentDailySeed();
+            let added = addFishToCurrentTank(currentSeed);
+            if (added) {
+                updateKeepButtonState();
+                updateDrawerUI();
+                syncTankFish();
+                openTank();
+            }
+        });
+
+        // ─── CLIPBOARD & SVG ────────────────────────────────────────────────────
+
+        async function copyFishToClipboard() {
+            const seedString = getCurrentDailySeed();
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = 1500;
+            offCanvas.height = 1200;
+            const oCtx = offCanvas.getContext('2d');
+            drawFishToCtx(oCtx, seedString, 750, 600, 2.5, 0, true, false, 0);
+            offCanvas.toBlob(async (blob) => {
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    const btn = document.getElementById('copyBtn');
+                    const origText = btn.innerText;
+                    btn.innerText = "COPIED! ✨";
+                    setTimeout(() => { btn.innerText = origText; }, 2000);
+                } catch (_) { alert("Could not copy to clipboard automatically."); }
+            }, 'image/png');
+        }
+
+        function toggleDropdown(e) {
+            e.stopPropagation();
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+        window.addEventListener('click', () => {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu && menu.classList.contains('show')) menu.classList.remove('show');
+        });
+
+        function downloadFishSVG() {
+            const seedString = getCurrentDailySeed();
+            const svgContent = buildFishSVG(seedString);
+            const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fish-${seedString}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ─── SVG BUILDER ──────────────────────────────────────────────────────
+
+        function buildFishSVG(seedString) {
+            const rand = seededRandom(stringToSeed(seedString));
+
+            function randomRange(min, max) { return min + rand() * (max - min); }
+
+            function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
+
+            const isShiny = rand() < 0.000000001;
+            const bodyType = pick([
+                'ellipse', 'box', 'diamond', 'pill', 'hexagon', 'trapezoid', 'teardrop', 'triangle',
+                'peanut', 'egg', 'arrow', 'bowtie', 'stout_oval'
+            ]);
+            const tailType = pick([
+                'triangle', 'forked', 'paddle', 'crescent', 'spiky', 'double_fan',
+                'pin_tail', 'crown', 'poly_fan', 'crystal_shard', 'stepped_tail',
+                'arrow_geo', 'diamond_tail', 'tri_blade'
+            ]);
+            const finType = pick(['spiky', 'poly_wing', 'crystal_fin', 'stepped_fin', 'shard_fin', 'trapezoid', 'sail_geo',
+                'blade_fin', 'tiny'
+            ]);
+            const patternType = pick([
+                'scales', 'stripes', 'grid', 'x_cross', 'halftone', 'sparkles', 'waves', 'chevrons',
+                'polka_ring', 'triangles', 'argyle', 'confetti', 'diamonds', 'concentric_circles',
+                'hex_grid', 'brick', 'stripes_horizontal', 'diagonal_stripes', 'zigzag', 'checkerboard', 'none'
+            ]);
+            const eyeType = pick([
+                'round', 'square', 'diamond', 'hexagon', 'slit', 'anime',
+                'sleepy', 'star', 'dot', 'winky', 'glasses', 'angry_geo',
+                'surprised_geo', 'focused_geo', 'cyborg_geo'
+            ]);
+
+            const bodyWidth = randomRange(12, 220);
+            const bodyHeight = randomRange(8, 140);
+            const tailSize = randomRange(12, 95);
+            const tailAngle = randomRange(0.3, 0.9);
+            const palette = getFishPalette(rand, isShiny);
+
+            const bodyColor = hslToHex(palette.bodyH, palette.bodyS, palette.bodyL);
+            const finColor = hslToHex(palette.finH, palette.finS, palette.finL);
+            const [sR, sG, sB] = hslToRgb(palette.scaleH, palette.scaleS, palette.scaleL);
+            const scaleColor = `rgb(${sR},${sG},${sB})`;
+            const scaleOpacity = 0.55;
+
+            const tailX = -bodyWidth + (bodyWidth * 0.1);
+            let tailPath = '';
+            if (tailType === 'triangle') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize},${-tailSize * tailAngle} ${tailX - tailSize},${tailSize * tailAngle}" fill="${finColor}"/>`;
+            } else if (tailType === 'forked') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize},${-tailSize * tailAngle} ${tailX - tailSize * 0.4},0 ${tailX - tailSize},${tailSize * tailAngle}" fill="${finColor}"/>`;
+            } else if (tailType === 'paddle') {
+                tailPath =
+                    `<rect x="${tailX - tailSize}" y="${-tailSize * tailAngle / 2}" width="${tailSize}" height="${tailSize * tailAngle}" rx="10" fill="${finColor}"/>`;
+            } else if (tailType === 'crescent') {
+                tailPath =
+                    `<path d="M ${tailX} 0 A ${tailSize} ${tailSize} 0 0 1 ${tailX - tailSize} ${tailSize*0.8} A ${tailSize*0.8} ${tailSize*0.8} 0 0 0 ${tailX - tailSize} ${-tailSize*0.8} A ${tailSize} ${tailSize} 0 0 1 ${tailX} 0 Z" fill="${finColor}"/>`;
+            } else if (tailType === 'double_fan') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize},${-tailSize*0.9} ${tailX - tailSize*0.7},${-tailSize*0.2} ${tailX},0 ${tailX - tailSize*0.7},${tailSize*0.2} ${tailX - tailSize},${tailSize*0.9}" fill="${finColor}"/>`;
+            } else if (tailType === 'pin_tail') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*0.5},${-tailSize*0.4} ${tailX - tailSize*1.8},0 ${tailX - tailSize*0.5},${tailSize*0.4}" fill="${finColor}"/>`;
+            } else if (tailType === 'crown') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize},${-tailSize*0.8} ${tailX - tailSize*0.6},${-tailSize*0.3} ${tailX - tailSize*1.2},0 ${tailX - tailSize*0.6},${tailSize*0.3} ${tailX - tailSize},${tailSize*0.8}" fill="${finColor}"/>`;
+            } else if (tailType === 'poly_fan') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*0.5},${-tailSize*0.5} ${tailX - tailSize*1.1},${-tailSize*0.95} ${tailX - tailSize*0.75},${-tailSize*0.3} ${tailX - tailSize*1.25},0 ${tailX - tailSize*0.75},${tailSize*0.3} ${tailX - tailSize*1.1},${tailSize*0.95} ${tailX - tailSize*0.5},${tailSize*0.5}" fill="${finColor}"/>`;
+            } else if (tailType === 'crystal_shard') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*0.4},${-tailSize*0.7} ${tailX - tailSize*1.3},${-tailSize*0.5} ${tailX - tailSize*0.8},0 ${tailX - tailSize*1.3},${tailSize*0.5} ${tailX - tailSize*0.4},${tailSize*0.7}" fill="${finColor}"/>`;
+            } else if (tailType === 'stepped_tail') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*0.3},${-tailSize*0.3} ${tailX - tailSize*0.3},${-tailSize*0.7} ${tailX - tailSize*0.7},${-tailSize*0.7} ${tailX - tailSize*0.7},${-tailSize*0.2} ${tailX - tailSize*1.2},${-tailSize*0.2} ${tailX - tailSize*1.2},${tailSize*0.2} ${tailX - tailSize*0.7},${tailSize*0.2} ${tailX - tailSize*0.7},${tailSize*0.7} ${tailX - tailSize*0.3},${tailSize*0.7} ${tailX - tailSize*0.3},${tailSize*0.3}" fill="${finColor}"/>`;
+            } else if (tailType === 'arrow_geo') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*0.6},${-tailSize*0.8} ${tailX - tailSize*0.8},${-tailSize*0.8} ${tailX - tailSize*0.4},0 ${tailX - tailSize*1.4},0 ${tailX - tailSize*0.4},0 ${tailX - tailSize*0.8},${tailSize*0.8} ${tailX - tailSize*0.6},${tailSize*0.8}" fill="${finColor}"/>`;
+            } else if (tailType === 'diamond_tail') {
+                tailPath =
+                    `<g fill="${finColor}"><polygon points="${tailX},0 ${tailX - tailSize*0.4},${-tailSize*0.4} ${tailX - tailSize*0.8},0 ${tailX - tailSize*0.4},${tailSize*0.4}"/><polygon points="${tailX - tailSize*0.7},0 ${tailX - tailSize*1.1},${-tailSize*0.6} ${tailX - tailSize*1.5},0 ${tailX - tailSize*1.1},${tailSize*0.6}"/></g>`;
+            } else if (tailType === 'tri_blade') {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize*1.1},${-tailSize*0.85} ${tailX - tailSize*0.6},${-tailSize*0.1} ${tailX - tailSize*1.3},0 ${tailX - tailSize*0.6},${tailSize*0.1} ${tailX - tailSize*1.1},${tailSize*0.85}" fill="${finColor}"/>`;
+            } else {
+                tailPath =
+                    `<polygon points="${tailX},0 ${tailX - tailSize},${-tailSize*0.8} ${tailX - tailSize*0.6},${-tailSize*0.2} ${tailX - tailSize*1.2},0 ${tailX - tailSize*0.6},${tailSize*0.2} ${tailX - tailSize},${tailSize*0.8}" fill="${finColor}"/>`;
+            }
+
+            function getFinSvg(isTop) {
+                const dir = isTop ? -1 : 1;
+                if (finType === 'poly_wing') {
+                    return `<polygon points="${-bodyWidth*0.4},${bodyHeight*0.6*dir} ${-bodyWidth*0.1},${(bodyHeight+90)*dir} ${bodyWidth*0.4},${(bodyHeight+110)*dir} ${bodyWidth*0.5},${bodyHeight*0.7*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'spiky') {
+                    return `<polygon points="${-bodyWidth*0.3},${bodyHeight*dir} -10,${(bodyHeight+70)*dir} 20,${(bodyHeight+35)*dir} 50,${(bodyHeight+85)*dir} ${bodyWidth*0.5},${bodyHeight*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'crystal_fin') {
+                    return `<polygon points="${-bodyWidth*0.3},${bodyHeight*0.7*dir} 0,${(bodyHeight+110)*dir} ${bodyWidth*0.3},${(bodyHeight+50)*dir} ${bodyWidth*0.45},${bodyHeight*0.8*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'stepped_fin') {
+                    return `<polygon points="${-bodyWidth*0.4},${bodyHeight*dir} ${-bodyWidth*0.4},${(bodyHeight+40)*dir} ${-bodyWidth*0.1},${(bodyHeight+40)*dir} ${-bodyWidth*0.1},${(bodyHeight+80)*dir} ${bodyWidth*0.2},${(bodyHeight+80)*dir} ${bodyWidth*0.2},${bodyHeight*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'shard_fin') {
+                    return `<polygon points="${-bodyWidth*0.5},${bodyHeight*0.8*dir} ${-bodyWidth*0.2},${(bodyHeight+95)*dir} ${bodyWidth*0.1},${(bodyHeight+40)*dir} ${bodyWidth*0.4},${(bodyHeight+85)*dir} ${bodyWidth*0.5},${bodyHeight*0.8*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'trapezoid') {
+                    return `<polygon points="${-bodyWidth*0.4},${bodyHeight*dir} ${-bodyWidth*0.2},${(bodyHeight+65)*dir} ${bodyWidth*0.3},${(bodyHeight+65)*dir} ${bodyWidth*0.5},${bodyHeight*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'sail_geo') {
+                    return `<polygon points="${-bodyWidth*0.5},${bodyHeight*0.5*dir} ${-bodyWidth*0.1},${(bodyHeight+140)*dir} ${bodyWidth*0.3},${(bodyHeight+90)*dir} ${bodyWidth*0.5},${bodyHeight*0.6*dir}" fill="${finColor}"/>`;
+                } else if (finType === 'blade_fin') {
+                    return `<polygon points="${-bodyWidth*0.3},${bodyHeight*0.8*dir} ${bodyWidth*0.1},${(bodyHeight+115)*dir} ${bodyWidth*0.6},${bodyHeight*0.7*dir}" fill="${finColor}"/>`;
                 } else {
-                    ctx.beginPath(); ctx.arc(eyeX + (eyeRadius * 0.2), eyeY, eyeRadius * 0.5, 0, Math.PI * 2); ctx.fill();
+                    return `<polygon points="-30,${bodyHeight*dir} 0,${(bodyHeight+35)*dir} 30,${bodyHeight*dir}" fill="${finColor}"/>`;
+                }
+            }
+            const finPaths = getFinSvg(true) + getFinSvg(false);
+
+            let bodySvg = '',
+                clipSvg = '';
+            if (bodyType === 'ellipse') {
+                bodySvg = `<ellipse cx="0" cy="0" rx="${bodyWidth}" ry="${bodyHeight}" fill="${bodyColor}"/>`;
+                clipSvg = `<ellipse cx="0" cy="0" rx="${bodyWidth}" ry="${bodyHeight}"/>`;
+            } else if (bodyType === 'box') {
+                bodySvg =
+                    `<rect x="${-bodyWidth}" y="${-bodyHeight}" width="${bodyWidth*2}" height="${bodyHeight*2}" rx="20" fill="${bodyColor}"/>`;
+                clipSvg =
+                    `<rect x="${-bodyWidth}" y="${-bodyHeight}" width="${bodyWidth*2}" height="${bodyHeight*2}" rx="20"/>`;
+            } else if (bodyType === 'pill') {
+                bodySvg =
+                    `<rect x="${-bodyWidth}" y="${-bodyHeight}" width="${bodyWidth*2}" height="${bodyHeight*2}" rx="${bodyHeight}" fill="${bodyColor}"/>`;
+                clipSvg =
+                    `<rect x="${-bodyWidth}" y="${-bodyHeight}" width="${bodyWidth*2}" height="${bodyHeight*2}" rx="${bodyHeight}"/>`;
+            } else if (bodyType === 'diamond') {
+                const d = `M ${-bodyWidth} 0 L 0 ${-bodyHeight} L ${bodyWidth} 0 L 0 ${bodyHeight} Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'hexagon') {
+                let pts = [];
+                for (let i = 0; i < 6; i++) {
+                    let angle = (Math.PI / 3) * i;
+                    pts.push(`${bodyWidth * Math.cos(angle)},${bodyHeight * Math.sin(angle)}`);
+                }
+                bodySvg = `<polygon points="${pts.join(' ')}" fill="${bodyColor}"/>`;
+                clipSvg = `<polygon points="${pts.join(' ')}"/>`;
+            } else if (bodyType === 'trapezoid') {
+                const d =
+                    `M ${-bodyWidth} ${bodyHeight} L ${bodyWidth} ${bodyHeight} L ${bodyWidth*0.6} ${-bodyHeight} L ${-bodyWidth*0.6} ${-bodyHeight} Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'teardrop') {
+                const d =
+                    `M ${-bodyWidth} 0 C ${-bodyWidth} ${-bodyHeight}, ${bodyWidth} ${-bodyHeight}, ${bodyWidth} 0 C ${bodyWidth} ${bodyHeight}, ${-bodyWidth} ${bodyHeight}, ${-bodyWidth} 0 Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'peanut') {
+                const d =
+                    `M ${-bodyWidth} 0 C ${-bodyWidth} ${-bodyHeight*1.1}, ${-bodyWidth*0.1} ${-bodyHeight*0.4}, ${bodyWidth*0.5} ${-bodyHeight} C ${bodyWidth*0.9} ${-bodyHeight*0.9}, ${bodyWidth} ${-bodyHeight*0.4}, ${bodyWidth} 0 C ${bodyWidth} ${bodyHeight*0.4}, ${bodyWidth*0.9} ${bodyHeight*0.9}, ${bodyWidth*0.5} ${bodyHeight} C ${-bodyWidth*0.1} ${bodyHeight*0.4}, ${-bodyWidth} ${bodyHeight*1.1}, ${-bodyWidth} 0 Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'egg') {
+                const d =
+                    `M ${-bodyWidth} 0 C ${-bodyWidth} ${-bodyHeight*1.2}, ${bodyWidth*0.6} ${-bodyHeight*0.7}, ${bodyWidth} 0 C ${bodyWidth*0.6} ${bodyHeight*0.7}, ${-bodyWidth} ${bodyHeight*1.2}, ${-bodyWidth} 0 Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'arrow') {
+                const d =
+                    `M ${bodyWidth} 0 L ${-bodyWidth*0.3} ${-bodyHeight} L ${-bodyWidth} ${-bodyHeight*0.6} L ${-bodyWidth*0.6} 0 L ${-bodyWidth} ${bodyHeight*0.6} L ${-bodyWidth*0.3} ${bodyHeight} Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'bowtie') {
+                const d =
+                    `M ${-bodyWidth} ${-bodyHeight} L 0 ${-bodyHeight*0.3} L ${bodyWidth} ${-bodyHeight} L ${bodyWidth} ${bodyHeight} L 0 ${bodyHeight*0.3} L ${-bodyWidth} ${bodyHeight} Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            } else if (bodyType === 'stout_oval') {
+                bodySvg = `<ellipse cx="0" cy="0" rx="${bodyWidth*0.85}" ry="${bodyHeight*1.1}" fill="${bodyColor}"/>`;
+                clipSvg = `<ellipse cx="0" cy="0" rx="${bodyWidth*0.85}" ry="${bodyHeight*1.1}"/>`;
+            } else {
+                const d = `M ${-bodyWidth} ${bodyHeight} L ${bodyWidth} 0 L ${-bodyWidth} ${-bodyHeight} Z`;
+                bodySvg = `<path d="${d}" fill="${bodyColor}"/>`;
+                clipSvg = `<path d="${d}"/>`;
+            }
+
+            let patternElements = '';
+            const patternScale = randomRange(12, 22);
+            if (patternType === 'scales') {
+                let paths = [];
+                for (let x = bodyWidth; x > -bodyWidth; x -= patternScale * 0.8) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.2) {
+                        let yOffset = (Math.floor(x / patternScale) % 2 === 0) ? (patternScale * 0.6) : 0;
+                        paths.push(
+                            `M ${x} ${y + yOffset - patternScale} A ${patternScale} ${patternScale} 0 0 1 ${x} ${y + yOffset + patternScale}`
+                            );
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="3" fill="none"/>`;
+            } else if (patternType === 'stripes') {
+                let paths = [];
+                for (let x = -bodyWidth + 10; x < bodyWidth; x += patternScale * 1.5) {
+                    paths.push(`M ${x} ${-bodyHeight} L ${x} ${bodyHeight}`);
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="12" fill="none"/>`;
+            } else if (patternType === 'grid') {
+                let paths = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale) paths.push(`M ${x} ${-bodyHeight} L ${x} ${bodyHeight}`);
+                for (let y = -bodyHeight; y < bodyHeight; y += patternScale) paths.push(`M ${-bodyWidth} ${y} L ${bodyWidth} ${y}`);
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="4" fill="none"/>`;
+            } else if (patternType === 'x_cross') {
+                let paths = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale) {
+                        paths.push(
+                            `M ${x - patternScale*0.3} ${y - patternScale*0.3} L ${x + patternScale*0.3} ${y + patternScale*0.3}`
+                            );
+                        paths.push(
+                            `M ${x + patternScale*0.3} ${y - patternScale*0.3} L ${x - patternScale*0.3} ${y + patternScale*0.3}`
+                            );
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="3" fill="none"/>`;
+            } else if (patternType === 'halftone') {
+                let circles = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 0.9) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 0.9) {
+                        let normX = (x + bodyWidth) / (bodyWidth * 2);
+                        let r = Math.max(1.5, (patternScale * 0.45) * Math.sin(normX * Math.PI));
+                        circles.push(
+                            `<circle cx="${x}" cy="${y}" r="${r}" fill="${scaleColor}" fill-opacity="${scaleOpacity}"/>`
+                            );
+                    }
+                }
+                patternElements = circles.join('');
+            } else if (patternType === 'sparkles') {
+                let paths = [];
+                for (let i = 0; i < Math.floor(randomRange(25, 55)); i++) {
+                    let sx = randomRange(-bodyWidth, bodyWidth);
+                    let sy = randomRange(-bodyHeight, bodyHeight);
+                    let size = randomRange(4, 12);
+                    paths.push(
+                        `M ${sx} ${sy - size} L ${sx + size*0.25} ${sy - size*0.25} L ${sx + size} ${sy} L ${sx + size*0.25} ${sy + size*0.25} L ${sx} ${sy + size} L ${sx - size*0.25} ${sy + size*0.25} L ${sx - size} ${sy} L ${sx - size*0.25} ${sy - size*0.25} Z`
+                        );
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" fill="${scaleColor}" fill-opacity="${scaleOpacity}"/>`;
+            } else if (patternType === 'waves') {
+                let paths = [];
+                for (let y = -bodyHeight; y < bodyHeight; y += patternScale) {
+                    let wavePoints = [];
+                    for (let x = -bodyWidth; x <= bodyWidth; x += 6) {
+                        let waveY = y + Math.sin((x / patternScale) * Math.PI) * (patternScale * 0.3);
+                        wavePoints.push(`${x === -bodyWidth ? 'M' : 'L'} ${x} ${waveY}`);
+                    }
+                    paths.push(wavePoints.join(' '));
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="4" fill="none"/>`;
+            } else if (patternType === 'chevrons') {
+                let paths = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 1.2) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.2) {
+                        paths.push(
+                            `M ${x - patternScale*0.4} ${y - patternScale*0.4} L ${x} ${y} L ${x - patternScale*0.4} ${y + patternScale*0.4}`
+                            );
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="4" fill="none"/>`;
+            } else if (patternType === 'polka_ring') {
+                let rings = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 1.2) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.2) {
+                        rings.push(
+                            `<circle cx="${x}" cy="${y}" r="${patternScale*0.35}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="3" fill="none"/>`
+                            );
+                    }
+                }
+                patternElements = rings.join('');
+            } else if (patternType === 'triangles') {
+                let tris = [];
+                for (let i = 0; i < Math.floor(randomRange(20, 45)); i++) {
+                    let tx = randomRange(-bodyWidth, bodyWidth);
+                    let ty = randomRange(-bodyHeight, bodyHeight);
+                    let ts = randomRange(6, 16);
+                    tris.push(`M ${tx} ${ty - ts} L ${tx + ts} ${ty + ts} L ${tx - ts} ${ty + ts} Z`);
+                }
+                patternElements =
+                    `<path d="${tris.join(' ')}" fill="${scaleColor}" fill-opacity="${scaleOpacity}"/>`;
+            } else if (patternType === 'argyle') {
+                let paths = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 1.4) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.4) {
+                        paths.push(
+                            `M ${x} ${y - patternScale*0.5} L ${x + patternScale*0.5} ${y} L ${x} ${y + patternScale*0.5} L ${x - patternScale*0.5} ${y} Z`
+                            );
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="2" fill="none"/>`;
+            } else if (patternType === 'diamonds') {
+                let paths = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 1.2) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.2) {
+                        paths.push(
+                            `M ${x} ${y - patternScale * 0.4} L ${x + patternScale * 0.4} ${y} L ${x} ${y + patternScale * 0.4} L ${x - patternScale * 0.4} ${y} Z`
+                            );
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="2" fill="none"/>`;
+            } else if (patternType === 'concentric_circles') {
+                let circles = [];
+                for (let x = -bodyWidth; x < bodyWidth; x += patternScale * 2) {
+                    for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 2) {
+                        for (let r = patternScale * 0.3; r <= patternScale * 0.8; r += patternScale * 0.25) {
+                            circles.push(
+                                `<circle cx="${x}" cy="${y}" r="${r}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="2" fill="none"/>`
+                                );
+                        }
+                    }
+                }
+                patternElements = circles.join('');
+            } else if (patternType === 'hex_grid') {
+                let paths = [];
+                const h = patternScale * 0.866;
+                for (let y = -bodyHeight - patternScale; y < bodyHeight + patternScale; y += h * 1.5) {
+                    for (let x = -bodyWidth - patternScale; x < bodyWidth + patternScale; x += patternScale * 1.732) {
+                        let shiftX = (Math.floor((y + bodyHeight) / (h * 1.5)) % 2 === 0) ? 0 : patternScale * 0.866;
+                        let pts = [];
+                        for (let k = 0; k < 6; k++) {
+                            let a = (Math.PI / 3) * k;
+                            pts.push(
+                                `${x + shiftX + patternScale * 0.5 * Math.cos(a)},${y + patternScale * 0.5 * Math.sin(a)}`
+                                );
+                        }
+                        paths.push(`M ${pts.join(' L ')} Z`);
+                    }
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="2" fill="none"/>`;
+            } else if (patternType === 'brick') {
+                let paths = [];
+                let rowIdx = 0;
+                for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 0.6) {
+                    let offset = (rowIdx % 2 === 0) ? 0 : patternScale * 0.6;
+                    paths.push(`M ${-bodyWidth} ${y} L ${bodyWidth} ${y}`);
+                    for (let x = -bodyWidth + offset; x < bodyWidth; x += patternScale * 1.2) {
+                        paths.push(`M ${x} ${y} L ${x} ${y + patternScale * 0.6}`);
+                    }
+                    rowIdx++;
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="2" fill="none"/>`;
+            } else if (patternType === 'stripes_horizontal') {
+                let paths = [];
+                for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 1.2) {
+                    paths.push(`M ${-bodyWidth} ${y} L ${bodyWidth} ${y}`);
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="8" fill="none"/>`;
+            } else if (patternType === 'diagonal_stripes') {
+                let paths = [];
+                for (let d = -bodyWidth - bodyHeight; d < bodyWidth + bodyHeight; d += patternScale * 1.2) {
+                    paths.push(`M ${d - bodyHeight} ${-bodyHeight} L ${d + bodyHeight} ${bodyHeight}`);
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="6" fill="none"/>`;
+            } else if (patternType === 'zigzag') {
+                let paths = [];
+                for (let y = -bodyHeight; y < bodyHeight; y += patternScale * 0.8) {
+                    let pts = [];
+                    let up = true;
+                    for (let x = -bodyWidth; x <= bodyWidth; x += patternScale * 0.5) {
+                        let zy = y + (up ? -patternScale * 0.3 : patternScale * 0.3);
+                        pts.push(`${x},${zy}`);
+                        up = !up;
+                    }
+                    paths.push(`M ${pts.join(' L ')}`);
+                }
+                patternElements =
+                    `<path d="${paths.join(' ')}" stroke="${scaleColor}" stroke-opacity="${scaleOpacity}" stroke-width="3" fill="none"/>`;
+            } else if (patternType === 'checkerboard') {
+                let size = patternScale * 0.8;
+                let rects = [];
+                let col = 0;
+                for (let x = -bodyWidth; x < bodyWidth; x += size) {
+                    let row = 0;
+                    for (let y = -bodyHeight; y < bodyHeight; y += size) {
+                        if ((col + row) % 2 === 0) {
+                            rects.push(
+                                `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="${scaleColor}" fill-opacity="${scaleOpacity}"/>`
+                                );
+                        }
+                        row++;
+                    }
+                    col++;
+                }
+                patternElements = rects.join('');
+            }
+
+            const eyeX = bodyWidth * (bodyType === 'diamond' || bodyType === 'triangle' || bodyType === 'arrow' ? 0.25 :
+            0.5);
+            const eyeY = -bodyHeight * 0.2;
+            const eyeRadius = randomRange(8, 18);
+            let eyeSvg = '';
+            if (eyeType === 'square') {
+                eyeSvg =
+                    `<rect x="${eyeX - eyeRadius}" y="${eyeY - eyeRadius}" width="${eyeRadius*2}" height="${eyeRadius*2}" fill="#FFFFFF"/>` +
+                    `<rect x="${eyeX}" y="${eyeY - eyeRadius/2}" width="${eyeRadius}" height="${eyeRadius}" fill="#000000"/>`;
+            } else if (eyeType === 'diamond') {
+                eyeSvg =
+                    `<polygon points="${eyeX},${eyeY - eyeRadius*1.2} ${eyeX + eyeRadius*1.1},${eyeY} ${eyeX},${eyeY + eyeRadius*1.2} ${eyeX - eyeRadius*1.1},${eyeY}" fill="#FFFFFF"/>` +
+                    `<rect x="${eyeX - eyeRadius*0.2}" y="${eyeY - eyeRadius*0.4}" width="${eyeRadius*0.7}" height="${eyeRadius*0.8}" fill="#000000"/>`;
+            } else if (eyeType === 'hexagon') {
+                let outer = [],
+                    inner = [];
+                for (let i = 0; i < 6; i++) {
+                    let a = (Math.PI / 3) * i;
+                    outer.push(`${eyeX + eyeRadius*Math.cos(a)},${eyeY + eyeRadius*Math.sin(a)}`);
+                    inner.push(
+                        `${eyeX + eyeRadius*0.2 + eyeRadius*0.4*Math.cos(a)},${eyeY + eyeRadius*0.4*Math.sin(a)}`);
+                }
+                eyeSvg =
+                    `<polygon points="${outer.join(' ')}" fill="#FFFFFF"/><polygon points="${inner.join(' ')}" fill="#000000"/>`;
+            } else if (eyeType === 'angry_geo') {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<circle cx="${eyeX + eyeRadius*0.2}" cy="${eyeY + eyeRadius*0.1}" r="${eyeRadius*0.5}" fill="#000000"/>` +
+                    `<polygon points="${eyeX - eyeRadius*1.3},${eyeY - eyeRadius*1.2} ${eyeX + eyeRadius*1.3},${eyeY - eyeRadius*0.2} ${eyeX + eyeRadius*1.3},${eyeY - eyeRadius*1.4}" fill="${bodyColor}"/>` +
+                    `<line x1="${eyeX - eyeRadius*1.2}" y1="${eyeY - eyeRadius*0.9}" x2="${eyeX + eyeRadius*1.2}" y2="${eyeY - eyeRadius*0.1}" stroke="#000000" stroke-width="3"/>`;
+            } else if (eyeType === 'surprised_geo') {
+                let oct = [];
+                for (let i = 0; i < 8; i++) {
+                    let a = (Math.PI / 4) * i;
+                    oct.push(`${eyeX + eyeRadius*Math.cos(a)},${eyeY + eyeRadius*Math.sin(a)}`);
+                }
+                eyeSvg =
+                    `<polygon points="${oct.join(' ')}" fill="#FFFFFF"/><rect x="${eyeX - eyeRadius*0.3}" y="${eyeY - eyeRadius*0.3}" width="${eyeRadius*0.6}" height="${eyeRadius*0.6}" fill="#000000"/>`;
+            } else if (eyeType === 'focused_geo') {
+                eyeSvg =
+                    `<rect x="${eyeX - eyeRadius}" y="${eyeY - eyeRadius*0.8}" width="${eyeRadius*1.8}" height="${eyeRadius*1.6}" fill="#FFFFFF"/>` +
+                    `<polygon points="${eyeX - eyeRadius*0.2},${eyeY - eyeRadius*0.5} ${eyeX + eyeRadius*0.6},${eyeY} ${eyeX - eyeRadius*0.2},${eyeY + eyeRadius*0.5}" fill="#000000"/>`;
+            } else if (eyeType === 'cyborg_geo') {
+                eyeSvg =
+                    `<rect x="${eyeX - eyeRadius}" y="${eyeY - eyeRadius}" width="${eyeRadius*2}" height="${eyeRadius*2}" fill="#FFFFFF"/>` +
+                    `<rect x="${eyeX - eyeRadius*0.6}" y="${eyeY - eyeRadius*0.6}" width="${eyeRadius*1.2}" height="${eyeRadius*1.2}" fill="#000000"/>` +
+                    `<rect x="${eyeX - eyeRadius*0.2}" y="${eyeY - eyeRadius*0.2}" width="${eyeRadius*0.4}" height="${eyeRadius*0.4}" fill="#00FFFF"/>`;
+            } else if (eyeType === 'star') {
+                let pts = [];
+                for (let i = 0; i < 5; i++) {
+                    let a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    pts.push(`${eyeX + Math.cos(a)*(eyeRadius*0.7)},${eyeY + Math.sin(a)*(eyeRadius*0.7)}`);
+                }
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<polygon points="${pts.join(' ')}" fill="#000000"/>`;
+            } else if (eyeType === 'dot') {
+                eyeSvg = `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius*0.45}" fill="#000000"/>`;
+            } else if (eyeType === 'winky') {
+                eyeSvg =
+                    `<path d="M ${eyeX - eyeRadius*0.75} ${eyeY} A ${eyeRadius*0.75} ${eyeRadius*0.75} 0 0 1 ${eyeX + eyeRadius*0.75} ${eyeY}" stroke="#000000" stroke-width="4" fill="none"/>`;
+            } else if (eyeType === 'glasses') {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<circle cx="${eyeX + eyeRadius*0.2}" cy="${eyeY}" r="${eyeRadius*0.5}" fill="#000000"/>` +
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius*1.1}" stroke="#000000" stroke-width="3" fill="none"/>` +
+                    `<line x1="${eyeX - eyeRadius*1.1}" y1="${eyeY}" x2="${eyeX - eyeRadius*1.8}" y2="${eyeY - eyeRadius*0.5}" stroke="#000000" stroke-width="3"/>`;
+            } else if (eyeType === 'slit') {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<ellipse cx="${eyeX + eyeRadius*0.2}" cy="${eyeY}" rx="${eyeRadius*0.2}" ry="${eyeRadius*0.8}" fill="#000000"/>`;
+            } else if (eyeType === 'anime') {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<ellipse cx="${eyeX}" cy="${eyeY}" rx="${eyeRadius*0.7}" ry="${eyeRadius*0.85}" fill="#000000"/>` +
+                    `<circle cx="${eyeX - eyeRadius*0.2}" cy="${eyeY - eyeRadius*0.3}" r="${eyeRadius*0.25}" fill="#FFFFFF"/>` +
+                    `<circle cx="${eyeX + eyeRadius*0.2}" cy="${eyeY + eyeRadius*0.3}" r="${eyeRadius*0.1}" fill="#FFFFFF"/>`;
+            } else if (eyeType === 'sleepy') {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<circle cx="${eyeX + eyeRadius*0.2}" cy="${eyeY + eyeRadius*0.2}" r="${eyeRadius*0.4}" fill="#000000"/>` +
+                    `<rect x="${eyeX - eyeRadius}" y="${eyeY - eyeRadius}" width="${eyeRadius*2}" height="${eyeRadius*1.1}" fill="${bodyColor}"/>` +
+                    `<line x1="${eyeX - eyeRadius}" y1="${eyeY + eyeRadius*0.1}" x2="${eyeX + eyeRadius}" y2="${eyeY + eyeRadius*0.1}" stroke="#000000" stroke-width="2"/>`;
+            } else {
+                eyeSvg =
+                    `<circle cx="${eyeX}" cy="${eyeY}" r="${eyeRadius}" fill="#FFFFFF"/>` +
+                    `<circle cx="${eyeX + eyeRadius*0.2}" cy="${eyeY}" r="${eyeRadius*0.5}" fill="#000000"/>`;
+            }
+
+            const viewBoxW = Math.max(400, (bodyWidth + tailSize) * 2.5);
+            const viewBoxH = Math.max(300, bodyHeight * 3.5);
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-viewBoxW/2} ${-viewBoxH/2} ${viewBoxW} ${viewBoxH}" width="800" height="600">
+          <defs>
+            <clipPath id="body-clip-layer">
+              ${clipSvg}
+            </clipPath>
+          </defs>
+          <g id="Layer_Tail">
+            ${tailPath}
+          </g>
+          <g id="Layer_Fins">
+            ${finPaths}
+          </g>
+          <g id="Layer_Body">
+            ${bodySvg}
+          </g>
+          <g id="Layer_Patterns" clip-path="url(#body-clip-layer)">
+            ${patternElements}
+          </g>
+          <g id="Layer_Eye">
+            ${eyeSvg}
+          </g>
+        </svg>`;
+        }
+
+        // ─── TANK DRAWER ────────────────────────────────────────────────────────
+
+        const tankDrawer = document.getElementById('tankDrawer');
+        const tankToggleBtn = document.getElementById('tankToggleBtn');
+        let isTankOpen = false;
+
+        function toggleTank() {
+            if (pipWindowInstance) return;
+            isTankOpen = !isTankOpen;
+            if (isTankOpen) openTank();
+            else closeTank();
+        }
+
+        function openTank() {
+            if (pipWindowInstance) return;
+            isTankOpen = true;
+            tankDrawer.classList.add('open');
+            updateDrawerUI();
+            syncTankFish();
+            if (tankCanvasEl) {
+                setupCanvasClickHandler(tankCanvasEl, false);
+            }
+        }
+
+        function closeTank() {
+            isTankOpen = false;
+            tankDrawer.classList.remove('open');
+        }
+
+        function setTankButtonState(poppedOut) {
+            tankToggleBtn.disabled = poppedOut;
+            tankToggleBtn.title = poppedOut ? "Fish tank is popped out in another window" : "";
+        }
+
+        function setTankTheme(theme) {
+            currentTankTheme = theme;
+            document.getElementById('dayBtn').classList.toggle('active', theme === 'day');
+            document.getElementById('nightBtn').classList.toggle('active', theme === 'night');
+        }
+
+        // ─── BACKGROUND & ENVIRONMENT ─────────────────────────────────────────
+
+        const BAYER_4X4 = [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5]
+        ];
+
+        let bgCacheMap = new Map();
+
+        function getDitheredBgCache(w, h, ratio, theme) {
+            const key = `${w}_${h}_${ratio}_${theme}`;
+            if (bgCacheMap.has(key)) return bgCacheMap.get(key);
+            if (bgCacheMap.size > 8) bgCacheMap.clear();
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = w;
+            offCanvas.height = h;
+            const tCtx = offCanvas.getContext('2d');
+
+            const px = Math.max(2, Math.floor(4 * ratio));
+
+            let colorStops = (theme === 'day') ? [
+                [0, 150, 200],
+                [10, 110, 170],
+                [15, 70, 130],
+                [10, 35, 75]
+            ] : [
+                [10, 30, 60],
+                [8, 22, 45],
+                [5, 15, 30],
+                [2, 8, 18]
+            ];
+
+            const rows = Math.ceil(h / px);
+            const cols = Math.ceil(w / px);
+
+            for (let r = 0; r < rows; r++) {
+                let normY = r / rows;
+                let totalStops = colorStops.length - 1;
+                let scaledY = normY * totalStops;
+                let stopIndex = Math.min(Math.floor(scaledY), totalStops - 1);
+                let frac = scaledY - stopIndex;
+                let c1 = colorStops[stopIndex];
+                let c2 = colorStops[stopIndex + 1];
+
+                for (let c = 0; c < cols; c++) {
+                    let ditherVal = (BAYER_4X4[r % 4][c % 4] / 16) - 0.5;
+                    let blendedFrac = Math.min(1, Math.max(0, frac + ditherVal * 0.35));
+                    let red = Math.round(c1[0] + (c2[0] - c1[0]) * blendedFrac);
+                    let green = Math.round(c1[1] + (c2[1] - c1[1]) * blendedFrac);
+                    let blue = Math.round(c1[2] + (c2[2] - c1[2]) * blendedFrac);
+                    tCtx.fillStyle = `rgb(${red},${green},${blue})`;
+                    tCtx.fillRect(c * px, r * px, px, px);
+                }
+            }
+
+            const gravelY = h - (px * 16);
+            tCtx.fillStyle = theme === 'day' ? '#141e28' : '#0a1018';
+            tCtx.fillRect(0, gravelY, w, h - gravelY);
+
+            const pebbleColors = theme === 'day' ?
+                ['#2d1b4e', '#432368', '#632c7e', '#883794', '#00a896', '#028090'] :
+                ['#180e2b', '#26123d', '#3d1a4e', '#572061', '#005f56', '#014c56'];
+
+            for (let x = 0; x < w; x += px * 2) {
+                for (let y = gravelY; y < h; y += px * 2) {
+                    let seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+                    let colorIdx = Math.floor((seed - Math.floor(seed)) * pebbleColors.length);
+                    tCtx.fillStyle = pebbleColors[colorIdx];
+                    tCtx.fillRect(x, y, px * 2, px * 2);
+                }
+            }
+
+            tCtx.fillStyle = theme === 'day' ? '#b854cc' : '#00ffd5';
+            for (let x = 0; x < w; x += px * 4) {
+                if (Math.sin(x * 0.5) > 0) tCtx.fillRect(x, gravelY, px * 2, px);
+            }
+
+            bgCacheMap.set(key, offCanvas);
+            return offCanvas;
+        }
+
+        let bubbles = Array.from({ length: 22 }, () => ({
+            x: Math.random(),
+            y: Math.random(),
+            speed: 0.001 + Math.random() * 0.002,
+            size: Math.floor(Math.random() * 3) + 2,
+            wobble: Math.random() * Math.PI * 2
+        }));
+
+        const PLANT_POSITIONS = [0.12, 0.28, 0.72, 0.88];
+
+        function drawDynamicBackgroundOverlays(tCtx, w, h, ratio, time, theme) {
+            const px = Math.max(2, Math.floor(4 * ratio));
+            const gravelY = h - (px * 16);
+            const waveBaseY = px * 14;
+
+            tCtx.save();
+            tCtx.fillStyle = theme === 'day' ? '#08161f' : '#040b10';
+            tCtx.beginPath();
+            tCtx.moveTo(0, 0);
+            tCtx.lineTo(w, 0);
+            for (let x = w; x >= 0; x -= px * 2) {
+                let wy = waveBaseY + Math.sin((x * 0.02) + (time * 2.5)) * (px * 2.5);
+                tCtx.lineTo(x, wy);
+            }
+            let wy0 = waveBaseY + Math.sin(time * 2.5) * (px * 2.5);
+            tCtx.lineTo(0, wy0);
+            tCtx.lineTo(0, 0);
+            tCtx.closePath();
+            tCtx.fill();
+            tCtx.restore();
+
+            const waveColor = theme === 'day' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(120, 220, 255, 0.5)';
+            tCtx.fillStyle = waveColor;
+            for (let x = 0; x < w; x += px * 4) {
+                let waveY = waveBaseY + Math.sin((x * 0.02) + (time * 2.5)) * (px * 2.5);
+                tCtx.fillRect(x, waveY, px * 3, px * 1.5);
+            }
+
+            PLANT_POSITIONS.forEach((posRatio, pIdx) => {
+                const baseX = Math.floor((w * posRatio) / px) * px;
+                const heightBlocks = 18 + (pIdx % 3) * 6;
+                const greenColor = theme === 'day' ? (pIdx % 2 === 0 ? '#109856' : '#00c868') : (pIdx % 2 === 0 ?
+                    '#0a5832' : '#007840');
+                const darkGreen = theme === 'day' ? (pIdx % 2 === 0 ? '#086438' : '#088848') : (pIdx % 2 === 0 ?
+                    '#043820' : '#04502a');
+
+                for (let b = 0; b < heightBlocks; b++) {
+                    let waveOffset = Math.floor(Math.sin(time * 2.5 + b * 0.3 + pIdx) * 1.8) * px;
+                    let stemY = gravelY - (b * px * 2);
+                    tCtx.fillStyle = darkGreen;
+                    tCtx.fillRect(baseX + waveOffset, stemY, px * 3, px * 2);
+                    tCtx.fillStyle = greenColor;
+                    tCtx.fillRect(baseX + waveOffset + px, stemY, px, px * 2);
+                    if (b % 4 === 0 && b > 2) {
+                        let leafDir = (b / 4) % 2 === 0 ? 1 : -1;
+                        tCtx.fillStyle = greenColor;
+                        tCtx.fillRect(baseX + waveOffset + (leafDir * px * 2), stemY, px * 2, px);
+                    }
+                }
+            });
+
+            bubbles.forEach(b => {
+                let bx = Math.floor((b.x * w + Math.sin(b.wobble) * px * 3) / px) * px;
+                let by = Math.floor((b.y * h) / px) * px;
+                let bSize = b.size * px;
+                tCtx.fillStyle = theme === 'day' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 255, 220, 0.5)';
+                tCtx.fillRect(bx, by, bSize, bSize);
+                tCtx.fillStyle = theme === 'day' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.8)';
+                tCtx.fillRect(bx, by, px, px);
+            });
+        }
+
+        // ─── PHYSICS ────────────────────────────────────────────────────────────
+
+        let tankFish = [];
+        let activePipCanvas = null;
+
+        let lastWinX = window.screenX ?? window.screenLeft ?? 0;
+        let lastWinY = window.screenY ?? window.screenTop ?? 0;
+        let lastPipX = 0;
+        let lastPipY = 0;
+
+        let drawerFluid = { velX: 0, velY: 0, naturalWeight: 1.0 };
+        let pipFluid = { velX: 0, velY: 0, naturalWeight: 1.0 };
+
+        // ─── RANDOM DRIFT TIMER ────────────────────────────────────────────────
+
+        const DIR_CHANGE_TIMEOUT = 7000;
+
+        function syncTankFish() {
+            const currentTank = getCurrentTank();
+            const fishSeeds = currentTank ? currentTank.fish : [];
+            const existingMap = new Map(tankFish.map(f => [f.seed, f]));
+
+            const now = performance.now();
+
+            tankFish = fishSeeds.map(seed => {
+                let fish = existingMap.get(seed);
+                if (!fish) {
+                    const rand = seededRandom(stringToSeed(seed));
+                    const individualSpeedFactor = 0.75 + rand() * 0.5;
+                    const dims = getFishBodyDimensions(seed);
+                    fish = {
+                        seed: seed,
+                        nx: 0.2 + rand() * 0.6,
+                        ny: 0.2 + rand() * 0.6,
+                        nvx: 0,
+                        nvy: 0,
+                        speed: (0.0003 + rand() * 0.0002) * individualSpeedFactor,
+                        dir: rand() < 0.5 ? 1 : -1,
+                        wigglePhase: rand() * Math.PI * 2,
+                        wiggleSpeed: (0.012 + rand() * 0.008) * individualSpeedFactor,
+                        baseScale: 0.18,
+                        targetPellet: null,
+                        tiltAngle: 0,
+                        targetTilt: 0,
+                        lastDirectionChange: now,
+                        driftTargetY: 0,
+                        driftVelocity: 0,
+                        isDrifting: false,
+                        driftTimer: 0,
+                        bodyWidth: dims.bodyWidth,
+                        bodyHeight: dims.bodyHeight
+                    };
+                }
+                if (fish.targetPellet === undefined) fish.targetPellet = null;
+                if (fish.tiltAngle === undefined) fish.tiltAngle = 0;
+                if (fish.targetTilt === undefined) fish.targetTilt = 0;
+                if (fish.lastDirectionChange === undefined) fish.lastDirectionChange = now;
+                if (fish.driftTargetY === undefined) fish.driftTargetY = 0;
+                if (fish.driftVelocity === undefined) fish.driftVelocity = 0;
+                if (fish.isDrifting === undefined) fish.isDrifting = false;
+                if (fish.driftTimer === undefined) fish.driftTimer = 0;
+                if (fish.bodyWidth === undefined || fish.bodyHeight === undefined) {
+                    const dims = getFishBodyDimensions(seed);
+                    fish.bodyWidth = dims.bodyWidth;
+                    fish.bodyHeight = dims.bodyHeight;
+                }
+                return fish;
+            });
+
+            for (const f of tankFish) {
+                if (f.targetPellet) {
+                    const stillExists = pellets.some(p => p === f.targetPellet && p.active && !p.eaten);
+                    if (!stillExists) {
+                        f.targetPellet = null;
+                        f.targetTilt = 0;
+                    }
                 }
             }
         }
 
-        // Listeners & Init
+        function updateTankPhysics(drawerFluid, pipFluid) {
+            const now = performance.now();
+
+            bubbles.forEach(b => {
+                b.y -= b.speed;
+                if (b.y < -0.05) b.y = 1.05;
+                b.wobble += 0.05;
+            });
+
+            const combinedVelX = drawerFluid.velX + pipFluid.velX;
+            const combinedVelY = drawerFluid.velY + pipFluid.velY;
+            const combinedNaturalWeight = Math.min(drawerFluid.naturalWeight, pipFluid.naturalWeight);
+            const isMoving = Math.abs(combinedVelX) > 0.00005 || Math.abs(combinedVelY) > 0.00005;
+
+            const cssW = (tankCanvasEl && tankCanvasEl.clientWidth) ? tankCanvasEl.clientWidth : 380;
+            const cssH = (tankCanvasEl && tankCanvasEl.clientHeight) ? tankCanvasEl.clientHeight : window.innerHeight;
+            const scaledFishRadius = Math.max(0.12, 0.52 / (1 + 0.45 * Math.log(Math.max(1, tankFish.length))));
+
+            const MAX_FISH_SPEED = 0.008;
+            const DRAG_FLIP_THRESHOLD = 0.0008;
+
+            if (!isMoving && tankFish.length > 1) {
+                const influenceRadius = Math.min(scaledFishRadius * 0.25, 0.10);
+                const influenceRadiusSq = influenceRadius * influenceRadius;
+                const aspect = cssW / cssH;
+                const len = tankFish.length;
+
+                for (let i = 0; i < len; i++) {
+                    const f1 = tankFish[i];
+                    for (let j = i + 1; j < len; j++) {
+                        const f2 = tankFish[j];
+                        let dx = (f2.nx - f1.nx) * aspect;
+                        if (dx >= influenceRadius || dx <= -influenceRadius) continue;
+                        let dy = f2.ny - f1.ny;
+                        if (dy >= influenceRadius || dy <= -influenceRadius) continue;
+                        let distSq = dx * dx + dy * dy;
+                        if (distSq < influenceRadiusSq && distSq > 0.00000001) {
+                            let dist = Math.sqrt(distSq);
+                            let normDist = dist / influenceRadius;
+                            let smoothFalloff = (1 - normDist) * (1 - normDist);
+                            let nudgeForce = smoothFalloff * 0.000025;
+                            let nx = dx / dist;
+                            let ny = dy / dist;
+                            f1.nvx -= (nx / aspect) * nudgeForce;
+                            f1.nvy -= ny * nudgeForce;
+                            f2.nvx += (nx / aspect) * nudgeForce;
+                            f2.nvy += ny * nudgeForce;
+                        }
+                    }
+                }
+            }
+
+            tankFish.forEach(fish => {
+                const padXNorm = Math.max(0.08, (90 * scaledFishRadius) / cssW);
+                const padYNorm = Math.max(0.08, (70 * scaledFishRadius) / cssH);
+                const minNx = padXNorm;
+                const maxNx = 1.0 - padXNorm;
+                const minNy = padYNorm + 0.05;
+                const maxNy = 1.0 - padYNorm;
+
+                if (fish.targetPellet) {
+                    fish.nvx = fish.nvx * 0.92 + combinedVelX * 0.04;
+                    fish.nvy = fish.nvy * 0.92 + combinedVelY * 0.04;
+                    let curSpeed = Math.hypot(fish.nvx, fish.nvy);
+                    if (curSpeed > MAX_FISH_SPEED * 1.5) {
+                        fish.nvx = (fish.nvx / curSpeed) * MAX_FISH_SPEED * 1.5;
+                        fish.nvy = (fish.nvy / curSpeed) * MAX_FISH_SPEED * 1.5;
+                    }
+                } else {
+                    const timeSinceDirChange = now - fish.lastDirectionChange;
+                    if (timeSinceDirChange > DIR_CHANGE_TIMEOUT && !fish.targetPellet) {
+                        if (!fish.isDrifting) {
+                            fish.isDrifting = true;
+                            const upOrDown = Math.random() < 0.5 ? -1 : 1;
+                            fish.driftTargetY = fish.ny + upOrDown * (0.03 + Math.random() * 0.04);
+                            fish.driftTargetY = Math.max(minNy + 0.02, Math.min(maxNy - 0.02, fish.driftTargetY));
+                            fish.driftTimer = 0;
+                        }
+
+                        const driftSpeed = 0.00015;
+                        const dyDrift = fish.driftTargetY - fish.ny;
+                        const absDy = Math.abs(dyDrift);
+                        if (absDy > 0.001) {
+                            const move = Math.sign(dyDrift) * Math.min(driftSpeed, absDy);
+                            fish.ny += move;
+                            const hDrift = Math.sin(now * 0.0003 + fish.seed.length) * 0.00005;
+                            fish.nx += hDrift;
+                        } else {
+                            fish.isDrifting = false;
+                            fish.lastDirectionChange = now;
+                            if (Math.random() < 0.3) {
+                                fish.dir = fish.dir > 0 ? -1 : 1;
+                            }
+                        }
+
+                        fish.nx = Math.max(minNx, Math.min(maxNx, fish.nx));
+                        fish.ny = Math.max(minNy, Math.min(maxNy, fish.ny));
+
+                        fish.nvx = fish.nvx * 0.92 + combinedVelX * 0.04;
+                        fish.nvy = fish.nvy * 0.92 + combinedVelY * 0.04;
+                    } else {
+                        if (isMoving) {
+                            fish.nvx = fish.nvx * 0.95 + combinedVelX * 0.05;
+                            fish.nvy = fish.nvy * 0.95 + combinedVelY * 0.05;
+                            if (Math.abs(combinedVelX) > DRAG_FLIP_THRESHOLD) {
+                                let targetDir = combinedVelX > 0 ? 1 : -1;
+                                let nearLeftWall = fish.nx <= minNx + 0.02;
+                                let nearRightWall = fish.nx >= maxNx - 0.02;
+                                if (!(targetDir === -1 && nearLeftWall) && !(targetDir === 1 && nearRightWall)) {
+                                    if (targetDir !== fish.dir) {
+                                        fish.dir = targetDir;
+                                        fish.lastDirectionChange = now;
+                                        fish.isDrifting = false;
+                                    }
+                                }
+                            }
+                        } else {
+                            fish.nvx *= 0.92;
+                            fish.nvy *= 0.92;
+                            if (Math.abs(fish.nvx) < 0.00001) fish.nvx = 0;
+                            if (Math.abs(fish.nvy) < 0.00001) fish.nvy = 0;
+                        }
+
+                        let curSpeed = Math.hypot(fish.nvx, fish.nvy);
+                        if (curSpeed > MAX_FISH_SPEED) {
+                            fish.nvx = (fish.nvx / curSpeed) * MAX_FISH_SPEED;
+                            fish.nvy = (fish.nvy / curSpeed) * MAX_FISH_SPEED;
+                        }
+
+                        let swimNx = fish.speed * fish.dir * combinedNaturalWeight;
+                        fish.nx += fish.nvx + swimNx;
+                        fish.ny += fish.nvy;
+                        fish.wigglePhase += fish.wiggleSpeed * (0.1 + 0.9 * combinedNaturalWeight + Math.hypot(fish.nvx,
+                            fish.nvy) * 20);
+
+                        let dirChanged = false;
+                        if (fish.nx <= minNx) {
+                            fish.nx = minNx;
+                            fish.nvx = Math.max(0, fish.nvx);
+                            if (fish.dir === -1) { fish.dir = 1;
+                                dirChanged = true; }
+                        } else if (fish.nx >= maxNx) {
+                            fish.nx = maxNx;
+                            fish.nvx = Math.min(0, fish.nvx);
+                            if (fish.dir === 1) { fish.dir = -1;
+                                dirChanged = true; }
+                        }
+                        if (fish.ny <= minNy) {
+                            fish.ny = minNy;
+                            fish.nvy = Math.max(0, -fish.nvy * 0.5);
+                        } else if (fish.ny >= maxNy) {
+                            fish.ny = maxNy;
+                            fish.nvy = Math.min(0, -fish.nvy * 0.5);
+                        }
+
+                        if (dirChanged) {
+                            fish.lastDirectionChange = now;
+                            fish.isDrifting = false;
+                        }
+                    }
+                }
+
+                fish.nx = Math.max(minNx, Math.min(maxNx, fish.nx));
+                fish.ny = Math.max(minNy, Math.min(maxNy, fish.ny));
+
+                if (!fish.targetPellet && !fish.isDrifting) {
+                    fish.targetTilt = 0;
+                    fish.tiltAngle += (0 - fish.tiltAngle) * 0.02;
+                    if (Math.abs(fish.tiltAngle) < 0.0005) fish.tiltAngle = 0;
+                }
+            });
+        }
+
+        function drawTankScene(tCtx, cssW, cssH, ratio, time, theme) {
+            const canvasW = cssW * ratio;
+            const canvasH = cssH * ratio;
+
+            tCtx.resetTransform();
+            tCtx.clearRect(0, 0, canvasW, canvasH);
+
+            const bgImage = getDitheredBgCache(canvasW, canvasH, ratio, theme);
+            tCtx.drawImage(bgImage, 0, 0);
+
+            drawDynamicBackgroundOverlays(tCtx, canvasW, canvasH, ratio, time, theme);
+
+            // ─── DRAW FISH FIRST (behind pellets) ──────────────────────────────
+            if (tankFish.length > 0) {
+                const scaledFishRadius = Math.max(0.12, 0.52 / (1 + 0.45 * Math.log(Math.max(1, tankFish.length))));
+                const renderScale = scaledFishRadius * (cssW / 380) * ratio;
+                tankFish.forEach(fish => {
+                    const drawX = fish.nx * canvasW;
+                    const drawY = (fish.ny + Math.sin(fish.wigglePhase * 0.8) * 0.01) * canvasH;
+                    const tilt = fish.targetPellet ? fish.tiltAngle : (fish.isDrifting ? fish.tiltAngle * 0.3 : fish
+                        .tiltAngle);
+                    drawFishToCtx(tCtx, fish.seed, drawX, drawY, renderScale, fish.wigglePhase, fish.dir > 0, true, tilt);
+                });
+            } else {
+                tCtx.fillStyle = "#ffffff";
+                tCtx.font = `${11 * ratio}px 'Press Start 2P', monospace`;
+                tCtx.textAlign = "center";
+                tCtx.shadowBlur = 6;
+                tCtx.shadowColor = "black";
+                tCtx.fillText("Fih tank is empty!", canvasW / 2, canvasH / 2);
+                tCtx.fillText("Click KEEP to add fih.", canvasW / 2, canvasH / 2 + (28 * ratio));
+                tCtx.shadowBlur = 0;
+            }
+
+            // ─── DRAW PELLETS ON TOP OF FISH ──────────────────────────────────
+            drawPellets(tCtx, canvasW, canvasH, ratio);
+        }
+
+        let animStartTime = Date.now();
+
+        function animateTankLoop() {
+            const time = (Date.now() - animStartTime) / 1000;
+
+            const curWinX = window.screenX ?? window.screenLeft ?? 0;
+            const curWinY = window.screenY ?? window.screenTop ?? 0;
+            let dWinX = curWinX - lastWinX;
+            let dWinY = curWinY - lastWinY;
+            lastWinX = curWinX;
+            lastWinY = curWinY;
+
+            if (Math.abs(dWinX) > 200) dWinX = 0;
+            if (Math.abs(dWinY) > 200) dWinY = 0;
+
+            const MOMENTUM_SENSITIVITY = 0.18;
+            const MAX_DRAG_INPUT = 0.012;
+
+            let renderScale = 0.18;
+            let canvasW = 380;
+            let canvasH = 300;
+            let deviceCanvasW = 380;
+            let deviceCanvasH = 300;
+
+            if (tankCanvasEl && isTankOpen) {
+                const ratio = window.devicePixelRatio || 1;
+                const cssW = tankCanvasEl.clientWidth || 380;
+                const cssH = tankCanvasEl.clientHeight || window.innerHeight;
+                canvasW = cssW;
+                canvasH = cssH;
+                deviceCanvasW = cssW * ratio;
+                deviceCanvasH = cssH * ratio;
+                const scaledFishRadius = Math.max(0.12, 0.52 / (1 + 0.45 * Math.log(Math.max(1, tankFish.length))));
+                renderScale = scaledFishRadius * (cssW / 380) * ratio;
+
+                if (tankCanvasEl.width !== deviceCanvasW || tankCanvasEl.height !== deviceCanvasH) {
+                    tankCanvasEl.width = deviceCanvasW;
+                    tankCanvasEl.height = deviceCanvasH;
+                }
+
+                let rawVelX = (cssW > 0) ? (-dWinX / cssW) * MOMENTUM_SENSITIVITY : 0;
+                let rawVelY = (cssH > 0) ? (-dWinY / cssH) * MOMENTUM_SENSITIVITY : 0;
+
+                let inputMag = Math.hypot(rawVelX, rawVelY);
+                if (inputMag > MAX_DRAG_INPUT) {
+                    rawVelX = (rawVelX / inputMag) * MAX_DRAG_INPUT;
+                    rawVelY = (rawVelY / inputMag) * MAX_DRAG_INPUT;
+                }
+
+                drawerFluid.velX = drawerFluid.velX * 0.983 + rawVelX * 0.017;
+                drawerFluid.velY = drawerFluid.velY * 0.983 + rawVelY * 0.017;
+
+                let moveSpeed = Math.hypot(drawerFluid.velX, drawerFluid.velY);
+                drawerFluid.naturalWeight = Math.max(0, 1 - moveSpeed * 30);
+            } else {
+                drawerFluid.velX = 0;
+                drawerFluid.velY = 0;
+                drawerFluid.naturalWeight = 1.0;
+            }
+
+            if (activePipCanvas && pipWindowInstance) {
+                const curPipX = pipWindowInstance.screenX ?? pipWindowInstance.screenLeft ?? 0;
+                const curPipY = pipWindowInstance.screenY ?? pipWindowInstance.screenTop ?? 0;
+                let dPipX = curPipX - lastPipX;
+                let dPipY = curPipY - lastPipY;
+                lastPipX = curPipX;
+                lastPipY = curPipY;
+
+                if (Math.abs(dPipX) > 200) dPipX = 0;
+                if (Math.abs(dPipY) > 200) dPipY = 0;
+
+                const pRatio = window.devicePixelRatio || 1;
+                const pCssW = activePipCanvas.clientWidth || 400;
+                const pCssH = activePipCanvas.clientHeight || 300;
+
+                if (activePipCanvas.width !== pCssW * pRatio || activePipCanvas.height !== pCssH * pRatio) {
+                    activePipCanvas.width = pCssW * pRatio;
+                    activePipCanvas.height = pCssH * pRatio;
+                }
+
+                let rawPipVelX = (pCssW > 0) ? (-dPipX / pCssW) * MOMENTUM_SENSITIVITY : 0;
+                let rawPipVelY = (pCssH > 0) ? (-dPipY / pCssH) * MOMENTUM_SENSITIVITY : 0;
+
+                let pipInputMag = Math.hypot(rawPipVelX, rawPipVelY);
+                if (pipInputMag > MAX_DRAG_INPUT) {
+                    rawPipVelX = (rawPipVelX / pipInputMag) * MAX_DRAG_INPUT;
+                    rawPipVelY = (rawPipVelY / pipInputMag) * MAX_DRAG_INPUT;
+                }
+
+                pipFluid.velX = pipFluid.velX * 0.983 + rawPipVelX * 0.017;
+                pipFluid.velY = pipFluid.velY * 0.983 + rawPipVelY * 0.017;
+
+                let pipMoveSpeed = Math.hypot(pipFluid.velX, pipFluid.velY);
+                pipFluid.naturalWeight = Math.max(0, 1 - pipMoveSpeed * 30);
+            } else {
+                pipFluid.velX = 0;
+                pipFluid.velY = 0;
+                pipFluid.naturalWeight = 1.0;
+            }
+
+            updatePellets();
+            // Pass device pixel dimensions so renderScale and canvas dimensions are in the same unit.
+            updateFishTargeting(renderScale, deviceCanvasW, deviceCanvasH);
+
+            if (isTankOpen || activePipCanvas) {
+                updateTankPhysics(drawerFluid, pipFluid);
+            }
+
+            if (tankCanvasEl && isTankOpen) {
+                const ratio = window.devicePixelRatio || 1;
+                const cssW = tankCanvasEl.clientWidth || 380;
+                const cssH = tankCanvasEl.clientHeight || window.innerHeight;
+                const tCtx = tankCanvasEl.getContext('2d');
+                drawTankScene(tCtx, cssW, cssH, ratio, time, currentTankTheme);
+            }
+
+            if (activePipCanvas && pipWindowInstance) {
+                const pRatio = window.devicePixelRatio || 1;
+                const pCssW = activePipCanvas.clientWidth || 400;
+                const pCssH = activePipCanvas.clientHeight || 300;
+                const pCtx = activePipCanvas.getContext('2d');
+                drawTankScene(pCtx, pCssW, pCssH, pRatio, time, currentTankTheme);
+            }
+
+            requestAnimationFrame(animateTankLoop);
+        }
+
+        // ─── PICTURE-IN-PICTURE POPOUT ────────────────────────────────────────
+
+        let pipWindowInstance = null;
+
+        async function popOutTank() {
+            if ('documentPictureInPicture' in window) {
+                if (pipWindowInstance) {
+                    pipWindowInstance.close();
+                    return;
+                }
+
+                try {
+                    pipWindowInstance = await window.documentPictureInPicture.requestWindow({
+                        width: 420,
+                        height: 340
+                    });
+
+                    const pipDoc = pipWindowInstance.document;
+                    const styleEl = pipDoc.createElement('style');
+                    styleEl.textContent = `
+                body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0f2027; font-family:'Press Start 2P',monospace; }
+                canvas { width:100%; height:100%; display:block; cursor:crosshair; }
+                .pip-header { position:absolute; top:0; left:0; right:0; z-index:10; background:rgba(8,22,31,0.85); backdrop-filter:blur(8px); padding:6px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); }
+                .pip-header select { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:4px; padding:4px 8px; font-family:'Press Start 2P',monospace; font-size:8px; cursor:pointer; outline:none; flex:1; min-width:0; }
+                .pip-header select option { background:#102530; color:white; }
+                .pip-header .pip-label { color:white; font-size:8px; white-space:nowrap; }
+                .pip-header .pip-badge { background:#e74c3c; color:#fff; font-size:6px; padding:2px 5px; border-radius:3px; font-family:'Press Start 2P',monospace; white-space:nowrap; display:none; }
+                .pip-counter { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.4); font-family:'Press Start 2P',monospace; font-size:7px; z-index:5; pointer-events:none; background:rgba(0,0,0,0.3); padding:2px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); }
+              `;
+                    pipDoc.head.appendChild(styleEl);
+
+                    const header = pipDoc.createElement('div');
+                    header.className = 'pip-header';
+                    header.innerHTML = `
+                <span class="pip-label">🐟</span>
+                <select id="pipTankSelector"></select>
+                <span class="pip-badge" id="pipFullBadge">FULL</span>
+              `;
+                    pipDoc.body.appendChild(header);
+
+                    activePipCanvas = pipDoc.createElement('canvas');
+                    pipDoc.body.appendChild(activePipCanvas);
+
+                    const counter = pipDoc.createElement('div');
+                    counter.className = 'pip-counter';
+                    counter.id = 'pipPelletCounter';
+                    counter.textContent = '🍱 0 / 40';
+                    pipDoc.body.appendChild(counter);
+
+                    function updatePipSelector() {
+                        const sel = pipDoc.getElementById('pipTankSelector');
+                        if (!sel) return;
+                        const data = getTankData();
+                        const tanks = data.tanks;
+                        sel.innerHTML = '';
+                        tanks.forEach((t, idx) => {
+                            const opt = pipDoc.createElement('option');
+                            opt.value = t.id;
+                            let label = "Tank " + (idx + 1) + " (" + t.fish.length + " fish)";
+                            if (isTankFull(t)) label += " FULL";
+                            opt.textContent = label;
+                            if (t.id === data.currentTankId) opt.selected = true;
+                            sel.appendChild(opt);
+                        });
+                        const cur = tanks.find(t => t.id === data.currentTankId) || tanks[0];
+                        const badge = pipDoc.getElementById('pipFullBadge');
+                        if (badge) {
+                            badge.style.display = isTankFull(cur) ? 'inline-block' : 'none';
+                        }
+                    }
+
+                    updatePipSelector();
+
+                    function updatePipCounter() {
+                        const c = pipDoc.getElementById('pipPelletCounter');
+                        if (c) {
+                            const active = pellets.filter(p => p.active && !p.eaten).length;
+                            c.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
+                            c.style.display = active > 0 ? 'block' : 'none';
+                        }
+                    }
+                    const origUpdateCounter = updatePelletCounter;
+                    updatePelletCounter = function() {
+                        origUpdateCounter();
+                        updatePipCounter();
+                    };
+
+                    pipDoc.getElementById('pipTankSelector').addEventListener('change', function() {
+                        const selectedId = this.value;
+                        const data = getTankData();
+                        if (data.currentTankId !== selectedId) {
+                            data.currentTankId = selectedId;
+                            saveTankData(data);
+                            updateDrawerUI();
+                            syncTankFish();
+                            const cur = data.tanks.find(t => t.id === selectedId) || data.tanks[0];
+                            const badge = pipDoc.getElementById('pipFullBadge');
+                            if (badge) {
+                                badge.style.display = isTankFull(cur) ? 'inline-block' : 'none';
+                            }
+                            const drawerSel = document.getElementById('drawerTankSelector');
+                            if (drawerSel) {
+                                for (let opt of drawerSel.options) {
+                                    if (opt.value === selectedId) opt.selected = true;
+                                }
+                            }
+                            const drawerLabel = document.getElementById('drawerTankLabel');
+                            if (drawerLabel) {
+                                let idx = data.tanks.indexOf(cur);
+                                drawerLabel.textContent = "Tank " + (idx + 1);
+                            }
+                        }
+                    });
+
+                    setupCanvasClickHandler(activePipCanvas, true);
+
+                    closeTank();
+                    setTankButtonState(true);
+
+                    pipWindowInstance.addEventListener('pagehide', () => {
+                        pipWindowInstance = null;
+                        activePipCanvas = null;
+                        setTankButtonState(false);
+                        updateDrawerUI();
+                        syncTankFish();
+                        updatePelletCounter = origUpdateCounter;
+                    });
+
+                    updatePipCounter();
+
+                } catch (e) {
+                    alert("Unable to open Picture-in-Picture window.");
+                }
+            } else {
+                alert("Picture-in-Picture API is not supported in this browser.");
+            }
+        }
+
         window.addEventListener('resize', resizeAndDraw);
+
+        // ─── INIT ───────────────────────────────────────────────────────────────
+
+        (function init() {
+            let data = getTankData();
+            if (!data.tanks || data.tanks.length === 0) {
+                data.tanks = [{ id: "tank_1", fish: [] }];
+                data.currentTankId = "tank_1";
+                saveTankData(data);
+            }
+            if (!data.tanks.find(t => t.id === data.currentTankId)) {
+                data.currentTankId = data.tanks[0].id;
+                saveTankData(data);
+            }
+            updateDrawerUI();
+            syncTankFish();
+            if (tankCanvasEl) {
+                setupCanvasClickHandler(tankCanvasEl, false);
+            }
+        })();
+
         resizeAndDraw();
+        requestAnimationFrame(animateTankLoop);
     </script>
 </body>
 </html>
