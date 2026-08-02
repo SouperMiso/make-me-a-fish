@@ -293,27 +293,6 @@
             display: block;
         }
 
-        #pelletCounter {
-            position: absolute;
-            bottom: 85px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 8px;
-            z-index: 10;
-            pointer-events: none;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-            background: rgba(0, 0, 0, 0.4);
-            padding: 4px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            display: none;
-        }
-        #pelletCounter.visible {
-            display: block;
-        }
-
         @media (max-width: 600px) {
             #title {
                 font-size: 16px;
@@ -352,11 +331,6 @@
             .tank-label {
                 font-size: 8px;
             }
-            #pelletCounter {
-                font-size: 6px;
-                bottom: 70px;
-                padding: 2px 8px;
-            }
         }
     </style>
 </head>
@@ -364,7 +338,6 @@
 
     <div id="title">11:11, make a fih!</div>
     <canvas id="fishCanvas"></canvas>
-    <div id="pelletCounter" class="visible">🍱 0 / 40</div>
 
     <div id="uiOverlay">
         <button id="keepBtn" class="btn">KEEP 🐟</button>
@@ -1449,7 +1422,6 @@
         const titleEl = document.getElementById('title');
         const keepBtn = document.getElementById('keepBtn');
         const tankCanvasEl = document.getElementById('tankCanvas');
-        const pelletCounterEl = document.getElementById('pelletCounter');
 
         // ─── PELLET SYSTEM ───────────────────────────────────────────────────────
 
@@ -1478,24 +1450,8 @@
                 ]
             };
             pellets.push(pellet);
-            updatePelletCounter();
             assignFishToPellet(pellet);
             return true;
-        }
-
-        function updatePelletCounter() {
-            const active = pellets.filter(p => p.active && !p.eaten).length;
-            if (active > 0) {
-                pelletCounterEl.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
-                pelletCounterEl.classList.add('visible');
-            } else {
-                pelletCounterEl.classList.remove('visible');
-            }
-            const pipCounter = document.getElementById('pipPelletCounter');
-            if (pipCounter) {
-                pipCounter.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
-                pipCounter.style.display = active > 0 ? 'block' : 'none';
-            }
         }
 
         function removePellet(pellet) {
@@ -1509,7 +1465,6 @@
                 fish.nvy *= 0.5;
                 pellet.targetedBy = null;
             }
-            updatePelletCounter();
         }
 
         function assignFishToPellet(pellet) {
@@ -1560,7 +1515,6 @@
         // ─── FISH TARGETING LOGIC with ellipse collision ──────────────────────
 
         function updateFishTargeting(renderScale, canvasW, canvasH) {
-            // Clean up stale pellet references
             for (const fish of tankFish) {
                 if (fish.targetPellet) {
                     const p = fish.targetPellet;
@@ -1589,7 +1543,6 @@
                         const newDir = dx > 0 ? 1 : -1;
                         if (newDir !== fish.dir) {
                             fish.dir = newDir;
-                            fish.lastDirectionChange = performance.now();
                         }
                     }
 
@@ -1617,22 +1570,15 @@
                     fish.targetTilt = tiltRaw;
                     fish.tiltAngle += (fish.targetTilt - fish.tiltAngle) * 0.025;
 
-                    // ─── COLLISION: ellipse shape matching visual body ──────────
-                    // Visual half-dimensions in normalized space.
-                    // Use device-pixel dimensions so that renderScale (in device pixels)
-                    // and canvasW/canvasH are in the same unit.
                     const visHalfW = (fish.bodyWidth * renderScale) / canvasW;
                     const visHalfH = (fish.bodyHeight * renderScale) / canvasH;
 
-                    // Nose position (front of the fish, in direction of travel)
                     const noseX = fish.nx + fish.dir * visHalfW * 1.1;
                     const noseY = fish.ny;
 
-                    // Mouth/head ellipse: smaller than full body, at the front
                     const mouthRX = visHalfW * 0.55;
                     const mouthRY = visHalfH * 0.50;
 
-                    // Check if pellet is inside the mouth ellipse
                     const dxMouth = pellet.x - noseX;
                     const dyMouth = pellet.y - noseY;
                     const mouthDist = (dxMouth * dxMouth) / (mouthRX * mouthRX) +
@@ -1644,7 +1590,6 @@
                         continue;
                     }
 
-                    // Also check full body ellipse (for larger collisions)
                     const bodyRX = visHalfW * 0.85;
                     const bodyRY = visHalfH * 0.85;
                     const dxBody = pellet.x - fish.nx;
@@ -1652,7 +1597,6 @@
                     const bodyDist = (dxBody * dxBody) / (bodyRX * bodyRX) +
                         (dyBody * dyBody) / (bodyRY * bodyRY);
 
-                    // Only check body if pellet is in the front half (direction of travel)
                     const frontCheck = fish.dir > 0 ?
                         (pellet.x > fish.nx - visHalfW * 0.2) :
                         (pellet.x < fish.nx + visHalfW * 0.2);
@@ -1662,7 +1606,6 @@
                         findPelletForFish(fish);
                     }
                 } else {
-                    // No target: smoothly ease back to neutral
                     fish.targetTilt = 0;
                     fish.tiltAngle += (0 - fish.tiltAngle) * 0.02;
 
@@ -1679,9 +1622,6 @@
                                 break;
                             }
                         }
-                    }
-                    if (!found) {
-                        // No pellets available — natural swimming will take over
                     }
                 }
             }
@@ -1726,10 +1666,9 @@
                 p.x = Math.max(0.02, Math.min(0.98, p.x));
             }
             pellets = pellets.filter(p => p.active && !p.eaten);
-            updatePelletCounter();
         }
 
-        // ─── RENDER PELLETS — flaky creamy brown sprinkles ─────────────────────
+        // ─── RENDER PELLETS ─────────────────────────────────────────────────────
 
         function drawPellets(tCtx, canvasW, canvasH, ratio) {
             const baseSize = Math.max(3, Math.floor(5 * ratio));
@@ -2552,9 +2491,11 @@
                 }
             }
 
-            const gravelY = h - (px * 16);
+            // ─── MUCH SMALLER FLOOR (was px*16, now px*5) ────────────────────
+            const floorHeight = px * 5;
+            const gravelY = h - floorHeight;
             tCtx.fillStyle = theme === 'day' ? '#141e28' : '#0a1018';
-            tCtx.fillRect(0, gravelY, w, h - gravelY);
+            tCtx.fillRect(0, gravelY, w, floorHeight);
 
             const pebbleColors = theme === 'day' ?
                 ['#2d1b4e', '#432368', '#632c7e', '#883794', '#00a896', '#028090'] :
@@ -2578,10 +2519,12 @@
             return offCanvas;
         }
 
+        // ─── BUBBLES - slower wobble, more transparent, drawn in front ──────
+
         let bubbles = Array.from({ length: 22 }, () => ({
             x: Math.random(),
             y: Math.random(),
-            speed: 0.001 + Math.random() * 0.002,
+            speed: 0.0008 + Math.random() * 0.0012, // slower rise
             size: Math.floor(Math.random() * 3) + 2,
             wobble: Math.random() * Math.PI * 2
         }));
@@ -2590,8 +2533,9 @@
 
         function drawDynamicBackgroundOverlays(tCtx, w, h, ratio, time, theme) {
             const px = Math.max(2, Math.floor(4 * ratio));
-            const gravelY = h - (px * 16);
-            const waveBaseY = px * 14;
+            const floorHeight = px * 5;
+            const gravelY = h - floorHeight;
+            const waveBaseY = px * 6;
 
             tCtx.save();
             tCtx.fillStyle = theme === 'day' ? '#08161f' : '#040b10';
@@ -2616,9 +2560,10 @@
                 tCtx.fillRect(x, waveY, px * 3, px * 1.5);
             }
 
+            // ─── MUCH SMALLER SEAWEED (was 18-24 blocks, now 4-10) ──────────
             PLANT_POSITIONS.forEach((posRatio, pIdx) => {
                 const baseX = Math.floor((w * posRatio) / px) * px;
-                const heightBlocks = 18 + (pIdx % 3) * 6;
+                const heightBlocks = 4 + (pIdx % 3) * 3;
                 const greenColor = theme === 'day' ? (pIdx % 2 === 0 ? '#109856' : '#00c868') : (pIdx % 2 === 0 ?
                     '#0a5832' : '#007840');
                 const darkGreen = theme === 'day' ? (pIdx % 2 === 0 ? '#086438' : '#088848') : (pIdx % 2 === 0 ?
@@ -2638,15 +2583,44 @@
                     }
                 }
             });
+        }
+
+        // ─── DRAW BUBBLES IN FRONT OF FISH ────────────────────────────────────
+
+        function drawBubbles(tCtx, w, h, ratio, time, theme) {
+            const px = Math.max(2, Math.floor(4 * ratio));
+            const bubbleAlpha = theme === 'day' ? 0.20 : 0.18; // much more transparent
 
             bubbles.forEach(b => {
-                let bx = Math.floor((b.x * w + Math.sin(b.wobble) * px * 3) / px) * px;
+                // Slower wobble: was 0.05, now 0.012
+                b.wobble += 0.012;
+                let bx = Math.floor((b.x * w + Math.sin(b.wobble) * px * 2.5) / px) * px;
                 let by = Math.floor((b.y * h) / px) * px;
                 let bSize = b.size * px;
-                tCtx.fillStyle = theme === 'day' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 255, 220, 0.5)';
-                tCtx.fillRect(bx, by, bSize, bSize);
-                tCtx.fillStyle = theme === 'day' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.8)';
-                tCtx.fillRect(bx, by, px, px);
+
+                // Outer glow
+                tCtx.fillStyle = theme === 'day' ?
+                    `rgba(255, 255, 255, ${bubbleAlpha * 0.6})` :
+                    `rgba(0, 255, 220, ${bubbleAlpha * 0.5})`;
+                tCtx.beginPath();
+                tCtx.arc(bx + bSize / 2, by + bSize / 2, bSize * 0.7, 0, Math.PI * 2);
+                tCtx.fill();
+
+                // Main bubble
+                tCtx.fillStyle = theme === 'day' ?
+                    `rgba(255, 255, 255, ${bubbleAlpha * 0.5})` :
+                    `rgba(0, 255, 220, ${bubbleAlpha * 0.4})`;
+                tCtx.beginPath();
+                tCtx.arc(bx + bSize / 2, by + bSize / 2, bSize * 0.45, 0, Math.PI * 2);
+                tCtx.fill();
+
+                // Highlight
+                tCtx.fillStyle = theme === 'day' ?
+                    `rgba(255, 255, 255, ${bubbleAlpha * 0.35})` :
+                    `rgba(255, 255, 255, ${bubbleAlpha * 0.3})`;
+                tCtx.beginPath();
+                tCtx.arc(bx + bSize * 0.35, by + bSize * 0.35, bSize * 0.2, 0, Math.PI * 2);
+                tCtx.fill();
             });
         }
 
@@ -2663,9 +2637,7 @@
         let drawerFluid = { velX: 0, velY: 0, naturalWeight: 1.0 };
         let pipFluid = { velX: 0, velY: 0, naturalWeight: 1.0 };
 
-        // ─── RANDOM DRIFT TIMER ────────────────────────────────────────────────
-
-        const DIR_CHANGE_TIMEOUT = 7000;
+        // ─── SYNC FISH ──────────────────────────────────────────────────────────
 
         function syncTankFish() {
             const currentTank = getCurrentTank();
@@ -2694,11 +2666,6 @@
                         targetPellet: null,
                         tiltAngle: 0,
                         targetTilt: 0,
-                        lastDirectionChange: now,
-                        driftTargetY: 0,
-                        driftVelocity: 0,
-                        isDrifting: false,
-                        driftTimer: 0,
                         bodyWidth: dims.bodyWidth,
                         bodyHeight: dims.bodyHeight
                     };
@@ -2706,11 +2673,6 @@
                 if (fish.targetPellet === undefined) fish.targetPellet = null;
                 if (fish.tiltAngle === undefined) fish.tiltAngle = 0;
                 if (fish.targetTilt === undefined) fish.targetTilt = 0;
-                if (fish.lastDirectionChange === undefined) fish.lastDirectionChange = now;
-                if (fish.driftTargetY === undefined) fish.driftTargetY = 0;
-                if (fish.driftVelocity === undefined) fish.driftVelocity = 0;
-                if (fish.isDrifting === undefined) fish.isDrifting = false;
-                if (fish.driftTimer === undefined) fish.driftTimer = 0;
                 if (fish.bodyWidth === undefined || fish.bodyHeight === undefined) {
                     const dims = getFishBodyDimensions(seed);
                     fish.bodyWidth = dims.bodyWidth;
@@ -2730,18 +2692,20 @@
             }
         }
 
+        // ─── UPDATED PHYSICS: fish never stop, only turn on wall hit ────────
+
         function updateTankPhysics(drawerFluid, pipFluid) {
             const now = performance.now();
 
+            // Bubbles rise slowly
             bubbles.forEach(b => {
                 b.y -= b.speed;
                 if (b.y < -0.05) b.y = 1.05;
-                b.wobble += 0.05;
+                b.wobble += 0.012;
             });
 
             const combinedVelX = drawerFluid.velX + pipFluid.velX;
             const combinedVelY = drawerFluid.velY + pipFluid.velY;
-            const combinedNaturalWeight = Math.min(drawerFluid.naturalWeight, pipFluid.naturalWeight);
             const isMoving = Math.abs(combinedVelX) > 0.00005 || Math.abs(combinedVelY) > 0.00005;
 
             const cssW = (tankCanvasEl && tankCanvasEl.clientWidth) ? tankCanvasEl.clientWidth : 380;
@@ -2751,6 +2715,7 @@
             const MAX_FISH_SPEED = 0.008;
             const DRAG_FLIP_THRESHOLD = 0.0008;
 
+            // Soft repulsion between fish
             if (!isMoving && tankFish.length > 1) {
                 const influenceRadius = Math.min(scaledFishRadius * 0.25, 0.10);
                 const influenceRadiusSq = influenceRadius * influenceRadius;
@@ -2790,6 +2755,7 @@
                 const minNy = padYNorm + 0.05;
                 const maxNy = 1.0 - padYNorm;
 
+                // ─── TARGET PELLET BEHAVIOR ──────────────────────────────────
                 if (fish.targetPellet) {
                     fish.nvx = fish.nvx * 0.92 + combinedVelX * 0.04;
                     fish.nvy = fish.nvy * 0.92 + combinedVelY * 0.04;
@@ -2798,110 +2764,88 @@
                         fish.nvx = (fish.nvx / curSpeed) * MAX_FISH_SPEED * 1.5;
                         fish.nvy = (fish.nvy / curSpeed) * MAX_FISH_SPEED * 1.5;
                     }
+                    fish.nx += fish.nvx;
+                    fish.ny += fish.nvy;
+                    fish.nx = Math.max(minNx, Math.min(maxNx, fish.nx));
+                    fish.ny = Math.max(minNy, Math.min(maxNy, fish.ny));
+                    fish.wigglePhase += fish.wiggleSpeed;
+                    return;
+                }
+
+                // ─── FREE SWIMMING — ALWAYS SWIM, NEVER STOP ──────────────
+                // Apply fluid drag
+                if (isMoving) {
+                    fish.nvx = fish.nvx * 0.95 + combinedVelX * 0.05;
+                    fish.nvy = fish.nvy * 0.95 + combinedVelY * 0.05;
+                    // Only change direction due to strong fluid flow, but never override wall collisions
+                    if (Math.abs(combinedVelX) > DRAG_FLIP_THRESHOLD) {
+                        let targetDir = combinedVelX > 0 ? 1 : -1;
+                        let nearLeftWall = fish.nx <= minNx + 0.02;
+                        let nearRightWall = fish.nx >= maxNx - 0.02;
+                        if (!(targetDir === -1 && nearLeftWall) && !(targetDir === 1 && nearRightWall)) {
+                            // Fluid can influence direction, but wall collisions take priority
+                            if (targetDir !== fish.dir) {
+                                // Only flip if not pinned against a wall
+                                fish.dir = targetDir;
+                            }
+                        }
+                    }
                 } else {
-                    const timeSinceDirChange = now - fish.lastDirectionChange;
-                    if (timeSinceDirChange > DIR_CHANGE_TIMEOUT && !fish.targetPellet) {
-                        if (!fish.isDrifting) {
-                            fish.isDrifting = true;
-                            const upOrDown = Math.random() < 0.5 ? -1 : 1;
-                            fish.driftTargetY = fish.ny + upOrDown * (0.03 + Math.random() * 0.04);
-                            fish.driftTargetY = Math.max(minNy + 0.02, Math.min(maxNy - 0.02, fish.driftTargetY));
-                            fish.driftTimer = 0;
-                        }
+                    fish.nvx *= 0.92;
+                    fish.nvy *= 0.92;
+                    if (Math.abs(fish.nvx) < 0.00001) fish.nvx = 0;
+                    if (Math.abs(fish.nvy) < 0.00001) fish.nvy = 0;
+                }
 
-                        const driftSpeed = 0.00015;
-                        const dyDrift = fish.driftTargetY - fish.ny;
-                        const absDy = Math.abs(dyDrift);
-                        if (absDy > 0.001) {
-                            const move = Math.sign(dyDrift) * Math.min(driftSpeed, absDy);
-                            fish.ny += move;
-                            const hDrift = Math.sin(now * 0.0003 + fish.seed.length) * 0.00005;
-                            fish.nx += hDrift;
-                        } else {
-                            fish.isDrifting = false;
-                            fish.lastDirectionChange = now;
-                            if (Math.random() < 0.3) {
-                                fish.dir = fish.dir > 0 ? -1 : 1;
+                // ─── CONSTANT SWIMMING SPEED ───────────────────────────────
+                // Fish always swim at their speed in the current direction
+                const swimNx = fish.speed * fish.dir;
+                fish.nx += fish.nvx + swimNx;
+                fish.ny += fish.nvy;
+                fish.wigglePhase += fish.wiggleSpeed;
+
+                // ─── WALL COLLISION — ONLY PLACE DIRECTION CHANGES ─────────
+                let wallHit = false;
+                if (fish.nx <= minNx) {
+                    fish.nx = minNx;
+                    fish.nvx = Math.max(0, fish.nvx);
+                    if (fish.dir === -1) { fish.dir = 1;
+                        wallHit = true; }
+                } else if (fish.nx >= maxNx) {
+                    fish.nx = maxNx;
+                    fish.nvx = Math.min(0, fish.nvx);
+                    if (fish.dir === 1) { fish.dir = -1;
+                        wallHit = true; }
+                }
+                if (fish.ny <= minNy) {
+                    fish.ny = minNy;
+                    fish.nvy = Math.max(0, -fish.nvy * 0.5);
+                } else if (fish.ny >= maxNy) {
+                    fish.ny = maxNy;
+                    fish.nvy = Math.min(0, -fish.nvy * 0.5);
+                }
+
+                // Tilt smoothly back to neutral when not targeting
+                fish.targetTilt = 0;
+                fish.tiltAngle += (0 - fish.tiltAngle) * 0.02;
+                if (Math.abs(fish.tiltAngle) < 0.0005) fish.tiltAngle = 0;
+
+                // ─── PELLET SEARCH ──────────────────────────────────────────
+                if (!fish.targetPellet) {
+                    let found = false;
+                    for (const p of pellets) {
+                        if (p.active && !p.eaten && !p.targetedBy) {
+                            if (assignFishToPellet(p)) {
+                                found = true;
+                                break;
                             }
-                        }
-
-                        fish.nx = Math.max(minNx, Math.min(maxNx, fish.nx));
-                        fish.ny = Math.max(minNy, Math.min(maxNy, fish.ny));
-
-                        fish.nvx = fish.nvx * 0.92 + combinedVelX * 0.04;
-                        fish.nvy = fish.nvy * 0.92 + combinedVelY * 0.04;
-                    } else {
-                        if (isMoving) {
-                            fish.nvx = fish.nvx * 0.95 + combinedVelX * 0.05;
-                            fish.nvy = fish.nvy * 0.95 + combinedVelY * 0.05;
-                            if (Math.abs(combinedVelX) > DRAG_FLIP_THRESHOLD) {
-                                let targetDir = combinedVelX > 0 ? 1 : -1;
-                                let nearLeftWall = fish.nx <= minNx + 0.02;
-                                let nearRightWall = fish.nx >= maxNx - 0.02;
-                                if (!(targetDir === -1 && nearLeftWall) && !(targetDir === 1 && nearRightWall)) {
-                                    if (targetDir !== fish.dir) {
-                                        fish.dir = targetDir;
-                                        fish.lastDirectionChange = now;
-                                        fish.isDrifting = false;
-                                    }
-                                }
-                            }
-                        } else {
-                            fish.nvx *= 0.92;
-                            fish.nvy *= 0.92;
-                            if (Math.abs(fish.nvx) < 0.00001) fish.nvx = 0;
-                            if (Math.abs(fish.nvy) < 0.00001) fish.nvy = 0;
-                        }
-
-                        let curSpeed = Math.hypot(fish.nvx, fish.nvy);
-                        if (curSpeed > MAX_FISH_SPEED) {
-                            fish.nvx = (fish.nvx / curSpeed) * MAX_FISH_SPEED;
-                            fish.nvy = (fish.nvy / curSpeed) * MAX_FISH_SPEED;
-                        }
-
-                        let swimNx = fish.speed * fish.dir * combinedNaturalWeight;
-                        fish.nx += fish.nvx + swimNx;
-                        fish.ny += fish.nvy;
-                        fish.wigglePhase += fish.wiggleSpeed * (0.1 + 0.9 * combinedNaturalWeight + Math.hypot(fish.nvx,
-                            fish.nvy) * 20);
-
-                        let dirChanged = false;
-                        if (fish.nx <= minNx) {
-                            fish.nx = minNx;
-                            fish.nvx = Math.max(0, fish.nvx);
-                            if (fish.dir === -1) { fish.dir = 1;
-                                dirChanged = true; }
-                        } else if (fish.nx >= maxNx) {
-                            fish.nx = maxNx;
-                            fish.nvx = Math.min(0, fish.nvx);
-                            if (fish.dir === 1) { fish.dir = -1;
-                                dirChanged = true; }
-                        }
-                        if (fish.ny <= minNy) {
-                            fish.ny = minNy;
-                            fish.nvy = Math.max(0, -fish.nvy * 0.5);
-                        } else if (fish.ny >= maxNy) {
-                            fish.ny = maxNy;
-                            fish.nvy = Math.min(0, -fish.nvy * 0.5);
-                        }
-
-                        if (dirChanged) {
-                            fish.lastDirectionChange = now;
-                            fish.isDrifting = false;
                         }
                     }
                 }
-
-                fish.nx = Math.max(minNx, Math.min(maxNx, fish.nx));
-                fish.ny = Math.max(minNy, Math.min(maxNy, fish.ny));
-
-                if (!fish.targetPellet && !fish.isDrifting) {
-                    fish.targetTilt = 0;
-                    fish.tiltAngle += (0 - fish.tiltAngle) * 0.02;
-                    if (Math.abs(fish.tiltAngle) < 0.0005) fish.tiltAngle = 0;
-                }
             });
         }
+
+        // ─── DRAW TANK SCENE ────────────────────────────────────────────────────
 
         function drawTankScene(tCtx, cssW, cssH, ratio, time, theme) {
             const canvasW = cssW * ratio;
@@ -2915,16 +2859,16 @@
 
             drawDynamicBackgroundOverlays(tCtx, canvasW, canvasH, ratio, time, theme);
 
-            // ─── DRAW FISH FIRST (behind pellets) ──────────────────────────────
+            // ─── DRAW FISH ────────────────────────────────────────────────────
             if (tankFish.length > 0) {
                 const scaledFishRadius = Math.max(0.12, 0.52 / (1 + 0.45 * Math.log(Math.max(1, tankFish.length))));
                 const renderScale = scaledFishRadius * (cssW / 380) * ratio;
                 tankFish.forEach(fish => {
                     const drawX = fish.nx * canvasW;
                     const drawY = (fish.ny + Math.sin(fish.wigglePhase * 0.8) * 0.01) * canvasH;
-                    const tilt = fish.targetPellet ? fish.tiltAngle : (fish.isDrifting ? fish.tiltAngle * 0.3 : fish
-                        .tiltAngle);
-                    drawFishToCtx(tCtx, fish.seed, drawX, drawY, renderScale, fish.wigglePhase, fish.dir > 0, true, tilt);
+                    const tilt = fish.targetPellet ? fish.tiltAngle : fish.tiltAngle;
+                    drawFishToCtx(tCtx, fish.seed, drawX, drawY, renderScale, fish.wigglePhase, fish.dir > 0, true,
+                        tilt);
                 });
             } else {
                 tCtx.fillStyle = "#ffffff";
@@ -2937,11 +2881,16 @@
                 tCtx.shadowBlur = 0;
             }
 
-            // ─── DRAW PELLETS ON TOP OF FISH ──────────────────────────────────
+            // ─── DRAW PELLETS ON TOP OF FISH ──────────────────────────────
             drawPellets(tCtx, canvasW, canvasH, ratio);
+
+            // ─── DRAW BUBBLES IN FRONT OF EVERYTHING ──────────────────────
+            drawBubbles(tCtx, canvasW, canvasH, ratio, time, theme);
         }
 
         let animStartTime = Date.now();
+
+        // ─── ANIMATION LOOP ────────────────────────────────────────────────────
 
         function animateTankLoop() {
             const time = (Date.now() - animStartTime) / 1000;
@@ -2960,8 +2909,6 @@
             const MAX_DRAG_INPUT = 0.012;
 
             let renderScale = 0.18;
-            let canvasW = 380;
-            let canvasH = 300;
             let deviceCanvasW = 380;
             let deviceCanvasH = 300;
 
@@ -2969,8 +2916,6 @@
                 const ratio = window.devicePixelRatio || 1;
                 const cssW = tankCanvasEl.clientWidth || 380;
                 const cssH = tankCanvasEl.clientHeight || window.innerHeight;
-                canvasW = cssW;
-                canvasH = cssH;
                 deviceCanvasW = cssW * ratio;
                 deviceCanvasH = cssH * ratio;
                 const scaledFishRadius = Math.max(0.12, 0.52 / (1 + 0.45 * Math.log(Math.max(1, tankFish.length))));
@@ -3042,7 +2987,6 @@
             }
 
             updatePellets();
-            // Pass device pixel dimensions so renderScale and canvas dimensions are in the same unit.
             updateFishTargeting(renderScale, deviceCanvasW, deviceCanvasH);
 
             if (isTankOpen || activePipCanvas) {
@@ -3095,7 +3039,6 @@
                 .pip-header select option { background:#102530; color:white; }
                 .pip-header .pip-label { color:white; font-size:8px; white-space:nowrap; }
                 .pip-header .pip-badge { background:#e74c3c; color:#fff; font-size:6px; padding:2px 5px; border-radius:3px; font-family:'Press Start 2P',monospace; white-space:nowrap; display:none; }
-                .pip-counter { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.4); font-family:'Press Start 2P',monospace; font-size:7px; z-index:5; pointer-events:none; background:rgba(0,0,0,0.3); padding:2px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); }
               `;
                     pipDoc.head.appendChild(styleEl);
 
@@ -3110,12 +3053,6 @@
 
                     activePipCanvas = pipDoc.createElement('canvas');
                     pipDoc.body.appendChild(activePipCanvas);
-
-                    const counter = pipDoc.createElement('div');
-                    counter.className = 'pip-counter';
-                    counter.id = 'pipPelletCounter';
-                    counter.textContent = '🍱 0 / 40';
-                    pipDoc.body.appendChild(counter);
 
                     function updatePipSelector() {
                         const sel = pipDoc.getElementById('pipTankSelector');
@@ -3140,20 +3077,6 @@
                     }
 
                     updatePipSelector();
-
-                    function updatePipCounter() {
-                        const c = pipDoc.getElementById('pipPelletCounter');
-                        if (c) {
-                            const active = pellets.filter(p => p.active && !p.eaten).length;
-                            c.textContent = `🍱 ${active} / ${MAX_PELLETS}`;
-                            c.style.display = active > 0 ? 'block' : 'none';
-                        }
-                    }
-                    const origUpdateCounter = updatePelletCounter;
-                    updatePelletCounter = function() {
-                        origUpdateCounter();
-                        updatePipCounter();
-                    };
 
                     pipDoc.getElementById('pipTankSelector').addEventListener('change', function() {
                         const selectedId = this.value;
@@ -3193,10 +3116,7 @@
                         setTankButtonState(false);
                         updateDrawerUI();
                         syncTankFish();
-                        updatePelletCounter = origUpdateCounter;
                     });
-
-                    updatePipCounter();
 
                 } catch (e) {
                     alert("Unable to open Picture-in-Picture window.");
