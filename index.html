@@ -287,12 +287,6 @@
             flex-grow: 1;
             display: block;
             background: #0f2027;
-            cursor: crosshair;
-        }
-
-        /* ─── FISH CURSOR ─────────────────────────────────────────────── */
-        #tankCanvas.fish-cursor {
-            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAQbSURBVFiF7ZdLaFxlGMd/52TmzJ3JZJrcmDRt0jRp05Y2TU2bS0QvCm4saNWFVEAQchB0JRS6UMSFm4Jg3XhFUSoVQa0K0XhBK4IxKjSktFCTNmmb2dxnkpnJnO+zKAiJjfdBWpIdw8vifD98z3f+3/d93u8bIMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwjOca3T2sDhyX63Jd0UPmhTrmE8xO1Hfnv3o4gUupxm4Jv3clHp68A80nqtrJqLZ8VjS/5uEfjrJfJ46lDAmDFyMAgLm1wG/WZ8pOcjZqXj2T0s//AAJOUACIQIYjchwg1+W6XBciWkwzMByR4zq2mvhOjF/OKUcB/nyHAQAAj0xVvHqFTH8S/2AexVt2sJ9+c3cPz6n/LibPspOBE+Usc+6PmMEQcAD4OY+TeFF6M2BTHW2lF8fGfg7pmczAIkhi/k6TA5+WEly7GRshfjogLNRFmy9tEAxEwEC+FFJphnO16Gux4j/PxHw9m9+KnZRrUq8DmCbYagW/IVDvVvDXaNTbCaojMV2fPTpXHPwGgmtxTHsRDwBfEwjsJbCCiv7wqJx6rS0pXgNQIzGd3Y7ofRAC41UcR8UUDaTkYH2FWP1s0z/Sglz/iAYqXXEtHAiQpwHa6iV1sSsttRVEg6bD8Ecz1j3BzPMBhqTQABMZwDvRwfyW4R32DgwJkY9aNYLrS/G2FcAQcLwQ+67g37UX50M9+TzgeBHhaxgx6GQFtMeCmxGEA8DxrUT/ut6QPQ/cZ5JAqk3B91XSIxr4Jwb8scUwDkkARxP48So5CfD1iCTAhUPyTUR6u3gHwusS4OVV9nNp8B2eBPAcwfcsBJCCAgPDPAAaCpJ7EYv7XmTfTqBAlwDvXr9KvqFdcQcDDH4AUrDS4Nj03ez33QD3h9B4qNMEo2fLqFd7DXAhgPFLPMx7kZzYJRK8I0gsa4CjH8A/H3F+0Fp/WWAxUuPItj9k6uSM3Hvw9Vv9TzIIbuvyZR6sOrh3HjVnFQFMG3HrhLTQAP9W1sMdl9auVwYXQgyWl/3QeJgtzzN9bXm8I+a3W7FevTh/G3IxNx7rSDAa0V/+LCsfTp8CJlfE0kdztyneGJ2UsY1/E9iW2FmblidvPZKRwzngtwZ4VkEDshfx7dU4z0xAHHUA8PdXqK4fIPjLJJl73j86BjL2+OXFiAMxRthzSryJpeVThD6D2XWgHniCBvmXHr8bGECn5Xe3PjJ1jOx0b65uTReF2v1Hb88U4rW18epUHE5Uc4uBpmhTUV0l8k2dOZXCxg6qXf53cHSh3Nw+5qVLqC0sX4Px6y8CB4mfiovq3CJ3KwJKSEnJQEiD/dsJ/CtASsBAgP3aPKICaZCGgYHbRUUalZFR7RxH7M9efCBCPUmLxLsNIpWWc6kKpuE7rYcS2td7y77E2acEQuEA3xeHcPD1iJue1N9FpC9AjeR1uKOGnHp3xP58ICHz6FxxJgP/nwCp42uxk7wKqQ1E6nLJ7dfiABfHj47ttNUN1vVodqJ+65n9xmEYhmEYhmEYhmEYhmEYhmEYhmEYhmEYhmEYhmH8R/kbC8jNhGBbkYkAAAAASUVORK5CYII=') 15 15, auto;
         }
 
         canvas {
@@ -382,102 +376,48 @@
     </div>
 
     <script>
-        // ─── CURSOR: 8‑bit blue goldfish cracker ──────────────────────────────
+        // ─── NEW FISH CURSOR (pixel-perfect recreation, facing right) ──────────────
 
         function generateFishCursor() {
-            const size = 32;
+            // Mirrored grid (facing right)
+            const grid = [
+                [0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0],
+                [0,1,0,1,1,1,1,1,1,0,0],
+                [1,3,1,2,2,2,2,2,2,1,0],
+                [1,3,1,2,2,2,1,2,2,1,0],
+                [1,3,1,2,2,2,2,2,2,1,0],
+                [0,1,0,1,1,1,1,1,1,0,0]
+            ];
+            const scale = 4; // 4x pixel size
+            const canvasW = 11 * scale;
+            const canvasH = 7 * scale;
             const c = document.createElement('canvas');
-            c.width = size;
-            c.height = size;
+            c.width = canvasW;
+            c.height = canvasH;
             const ctx = c.getContext('2d');
             ctx.imageSmoothingEnabled = false;
 
-            // Clear transparent
-            ctx.clearRect(0, 0, size, size);
+            const colors = {
+                1: '#000000', // Outline
+                2: '#D6E8B9', // Light green body
+                3: '#45C69A'  // Teal tail
+            };
 
-            // Pixel grid: 16×16, each pixel = 2×2
-            const scale = 2;
-            // 1 = body, 2 = fin/tail, 3 = eye white, 4 = pupil
-            const grid = [
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ];
-
-            const bodyColor = '#4a90d9';
-            const bodyLight = '#6aaff0';
-            const bodyDark = '#2a6fa8';
-            const tailColor = '#3a80c9';
-            const tailLight = '#5a9fe0';
-            const eyeWhite = '#ffffff';
-            const pupil = '#1a1a2e';
-
-            for (let r = 0; r < 16; r++) {
-                for (let c = 0; c < 16; c++) {
-                    const val = grid[r][c];
+            for (let r = 0; r < grid.length; r++) {
+                for (let col = 0; col < grid[r].length; col++) {
+                    const val = grid[r][col];
                     if (val === 0) continue;
-                    const x = c * scale;
-                    const y = r * scale;
-
-                    if (val === 1) {
-                        // Body
-                        const isEdge = (r === 0 || r === 15 || c === 0 || c === 15 ||
-                            (r > 0 && grid[r - 1][c] === 0) ||
-                            (r < 15 && grid[r + 1][c] === 0) ||
-                            (c > 0 && grid[r][c - 1] === 0) ||
-                            (c < 15 && grid[r][c + 1] === 0));
-                        ctx.fillStyle = isEdge ? bodyDark : bodyColor;
-                        ctx.fillRect(x, y, scale, scale);
-                        // highlight
-                        if (!isEdge && r > 2 && r < 10 && c > 2 && c < 10) {
-                            ctx.fillStyle = bodyLight;
-                            ctx.fillRect(x, y, scale, scale);
-                        }
-                    } else if (val === 2) {
-                        // Tail / fin
-                        ctx.fillStyle = tailColor;
-                        ctx.fillRect(x, y, scale, scale);
-                        if (r > 3 && r < 10 && c < 6) {
-                            ctx.fillStyle = tailLight;
-                            ctx.fillRect(x, y, scale, scale);
-                        }
-                    } else if (val === 3) {
-                        ctx.fillStyle = eyeWhite;
-                        ctx.fillRect(x, y, scale, scale);
-                    } else if (val === 4) {
-                        ctx.fillStyle = pupil;
-                        ctx.fillRect(x, y, scale, scale);
-                    }
+                    ctx.fillStyle = colors[val];
+                    ctx.fillRect(col * scale, r * scale, scale, scale);
                 }
             }
 
-            // Draw eye (pixel art) on top of body
-            // Eye at roughly (9,5) in grid coords
-            const eyeX = 9 * scale;
-            const eyeY = 5 * scale;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(eyeX, eyeY, scale * 2, scale * 2);
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(eyeX + scale, eyeY + scale, scale, scale);
-            // small highlight
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(eyeX + scale * 1.2, eyeY + scale * 0.3, scale * 0.4, scale * 0.4);
-
             return c.toDataURL();
         }
+
+        // Generate the cursor URL once
+        const fishCursorUrl = generateFishCursor();
 
         // ─── MULTI‑TANK DATA LAYER ────────────────────────────────────────────────
 
@@ -615,7 +555,7 @@
                 data.currentTankId = selectedId;
                 saveTankData(data);
                 updateDrawerUI();
-                if (isTankOpen || activePipCanvas) {}
+                if (pipWindowInstance) {}
             }
         }
 
@@ -1526,10 +1466,17 @@
         const keepBtn = document.getElementById('keepBtn');
         const tankCanvasEl = document.getElementById('tankCanvas');
 
-        // ─── FISH CURSOR ──────────────────────────────────────────────────────
+        // ─── FISH CURSOR APPLICATION ──────────────────────────────────────────
 
-        const fishCursorUrl = generateFishCursor();
-        tankCanvasEl.classList.add('fish-cursor');
+        function applyFishCursor(el) {
+            if (el) {
+                // Force cursor via inline style with !important, hotspot at (32, 16) for right-facing fish
+                el.style.setProperty('cursor', `url('${fishCursorUrl}') 32 16, auto`, 'important');
+            }
+        }
+
+        // Apply to main tank canvas immediately and after any potential overrides
+        applyFishCursor(tankCanvasEl);
 
         // ─── PELLET SYSTEM ───────────────────────────────────────────────────────
 
@@ -1856,7 +1803,8 @@
                 const clampedY = Math.max(0.06, Math.min(0.94, normY));
                 spawnPellet(clampedX, clampedY);
             });
-            canvasEl.style.cursor = isPopup ? 'crosshair' : 'inherit';
+            // DO NOT clear the cursor - preserve the fish cursor
+            // We already set it via style with !important
         }
 
         // ─── RESIZE & DRAW ──────────────────────────────────────────────────────
@@ -2522,6 +2470,8 @@
             syncTankFish();
             if (tankCanvasEl) {
                 setupCanvasClickHandler(tankCanvasEl, false);
+                // Re-apply cursor with !important
+                applyFishCursor(tankCanvasEl);
             }
         }
 
@@ -2599,25 +2549,21 @@
                 }
             }
 
-            // ─── SMALLER, DENSER FLOOR (px*3 instead of px*5) ──────────────
             const floorHeight = px * 3;
             const gravelY = h - floorHeight;
             tCtx.fillStyle = theme === 'day' ? '#141e28' : '#0a1018';
             tCtx.fillRect(0, gravelY, w, floorHeight);
 
-            // Denser pebbles: smaller and more numerous
             const pebbleColors = theme === 'day' ?
                 ['#2d1b4e', '#432368', '#632c7e', '#883794', '#00a896', '#028090'] :
                 ['#180e2b', '#26123d', '#3d1a4e', '#572061', '#005f56', '#014c56'];
 
-            // Smaller step size for denser texture
             const step = px * 1.2;
             for (let x = 0; x < w; x += step) {
                 for (let y = gravelY; y < h; y += step) {
                     let seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
                     let colorIdx = Math.floor((seed - Math.floor(seed)) * pebbleColors.length);
                     tCtx.fillStyle = pebbleColors[colorIdx];
-                    // smaller pebbles
                     let size = px * 1.0 + (seed - Math.floor(seed)) * px * 0.8;
                     tCtx.fillRect(x, y, size, size);
                 }
@@ -2673,17 +2619,14 @@
                 tCtx.fillRect(x, waveY, px * 3, px * 1.5);
             }
 
-            // ─── ALGAE: thinner, taller, more populated ─────────────────────
             PLANT_POSITIONS.forEach((posRatio, pIdx) => {
                 const baseX = Math.floor((w * posRatio) / px) * px;
-                // Taller: 6-14 blocks (was 4-10)
                 const heightBlocks = 6 + (pIdx % 5) * 2 + Math.floor(Math.sin(pIdx * 1.7) * 2);
                 const greenColor = theme === 'day' ? (pIdx % 2 === 0 ? '#109856' : '#00c868') : (pIdx % 2 === 0 ?
                     '#0a5832' : '#007840');
                 const darkGreen = theme === 'day' ? (pIdx % 2 === 0 ? '#086438' : '#088848') : (pIdx % 2 === 0 ?
                     '#043820' : '#04502a');
 
-                // Thinner: px * 1.5 (was px * 3)
                 const stemW = px * 1.5;
                 for (let b = 0; b < heightBlocks; b++) {
                     let waveOffset = Math.floor(Math.sin(time * 2.8 + b * 0.4 + pIdx * 1.1) * 2.2) * px;
@@ -2692,7 +2635,6 @@
                     tCtx.fillRect(baseX + waveOffset, stemY, stemW, px * 2);
                     tCtx.fillStyle = greenColor;
                     tCtx.fillRect(baseX + waveOffset + stemW * 0.2, stemY, stemW * 0.6, px * 2);
-                    // Leaves more delicate
                     if (b % 5 === 0 && b > 3) {
                         let leafDir = (b / 5) % 2 === 0 ? 1 : -1;
                         tCtx.fillStyle = greenColor;
@@ -2717,7 +2659,6 @@
                 const half = bSize / 2;
                 const corner = bSize * 0.2;
 
-                // Outer glow (rounded square)
                 tCtx.fillStyle = theme === 'day' ?
                     `rgba(255, 255, 255, ${bubbleAlpha * 0.6})` :
                     `rgba(0, 255, 220, ${bubbleAlpha * 0.5})`;
@@ -2725,7 +2666,6 @@
                 tCtx.roundRect(bx, by, bSize, bSize, corner);
                 tCtx.fill();
 
-                // Main bubble (rounded square)
                 tCtx.fillStyle = theme === 'day' ?
                     `rgba(255, 255, 255, ${bubbleAlpha * 0.5})` :
                     `rgba(0, 255, 220, ${bubbleAlpha * 0.4})`;
@@ -2734,7 +2674,6 @@
                 tCtx.roundRect(bx + inset, by + inset, bSize - inset * 2, bSize - inset * 2, corner * 0.7);
                 tCtx.fill();
 
-                // Highlight (small square)
                 tCtx.fillStyle = theme === 'day' ?
                     `rgba(255, 255, 255, ${bubbleAlpha * 0.35})` :
                     `rgba(255, 255, 255, ${bubbleAlpha * 0.3})`;
@@ -3135,7 +3074,7 @@
                     const styleEl = pipDoc.createElement('style');
                     styleEl.textContent = `
                 body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0f2027; font-family:'Press Start 2P',monospace; }
-                canvas { width:100%; height:100%; display:block; cursor:crosshair; }
+                canvas { width:100%; height:100%; display:block; }
                 .pip-header { position:absolute; top:0; left:0; right:0; z-index:10; background:rgba(8,22,31,0.85); backdrop-filter:blur(8px); padding:6px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); }
                 .pip-header select { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:4px; padding:4px 8px; font-family:'Press Start 2P',monospace; font-size:8px; cursor:pointer; outline:none; flex:1; min-width:0; }
                 .pip-header select option { background:#102530; color:white; }
@@ -3154,6 +3093,7 @@
                     pipDoc.body.appendChild(header);
 
                     activePipCanvas = pipDoc.createElement('canvas');
+                    applyFishCursor(activePipCanvas);
                     pipDoc.body.appendChild(activePipCanvas);
 
                     function updatePipSelector() {
@@ -3247,6 +3187,7 @@
             syncTankFish();
             if (tankCanvasEl) {
                 setupCanvasClickHandler(tankCanvasEl, false);
+                applyFishCursor(tankCanvasEl);
             }
         })();
 
